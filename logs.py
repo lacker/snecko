@@ -55,12 +55,20 @@ def iter_logs():
         tf = tarfile.open(fname)
         # Each member is a <id>.run.json file
         for member in tf.getmembers():
-            yield member.name
+            if member.isdir():
+                continue
+            f = tf.extractfile(member)
+            if f is None:
+                print(member)
+                raise Exception("could not extract")
+            yield f.read()
 
         
 if __name__ == "__main__":
     num = 0
     for log in iter_logs():
         num += 1
+        if num % 100 != 0:
+            continue
         print(f"run {num}:")
         print(log)
