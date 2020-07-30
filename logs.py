@@ -48,17 +48,19 @@ class GameLog(object):
     def __init__(self):
         pass
 
-    
+
 def iter_logs():
     for month in MONTHS:
         fname = get_fname(month)
         tf = tarfile.open(fname)
-        yield f"{len(tf.getnames())} items"
+        # Each member is a <id>.run.json file
+        for member in tf.getmembers():
+            yield member.name
 
         
 if __name__ == "__main__":
     num = 0
     for log in iter_logs():
         num += 1
-        print(f"log {num}:")
+        print(f"run {num}:")
         print(log)
