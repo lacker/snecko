@@ -2,6 +2,7 @@
 
 import os
 import requests
+import tarfile
 import urllib
 
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
@@ -29,6 +30,11 @@ def get_fname(month):
 
 
 def download_all():
+    # Act like we're not a bot
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    urllib.request.install_opener(opener)
+
     for month in MONTHS:
         fname = get_fname(month)
         if os.path.exists(fname):
@@ -38,10 +44,21 @@ def download_all():
         urllib.request.urlretrieve(url, fname)
 
         
-if __name__ == "__main__":
-    # Act like we're not a bot
-    opener = urllib.request.build_opener()
-    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-    urllib.request.install_opener(opener)
+class GameLog(object):
+    def __init__(self):
+        pass
 
-    download_all()
+    
+def iter_logs():
+    for month in MONTHS:
+        fname = get_fname(month)
+        tf = tarfile.open(fname)
+        yield f"{len(tf.getnames())} items"
+
+        
+if __name__ == "__main__":
+    num = 0
+    for log in iter_logs():
+        num += 1
+        print(f"log {num}:")
+        print(log)
