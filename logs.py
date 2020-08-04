@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import os
 import requests
 import tarfile
@@ -45,10 +46,40 @@ def download_all():
 
         
 class GameLog(object):
-    def __init__(self):
-        pass
+    def __init__(self, name, bytestring):
+        self.name = name
+        self.bytestring = bytestring
+        string = self.bytestring.decode(encoding="utf-8", errors="replace")
+        self.data = json.loads(string)
 
+    def ascension(self):
+        return self.data.get("ascension_level", 0)
 
+    def is_high_level(self):
+        return self.ascension() >= 17
+
+    @staticmethod
+    def get_fname(name):
+        return os.path.join(CACHE, "saved", name)
+
+    @staticmethod
+    def load(name):
+        fname = GameLog.get_fname(name)
+        bs = open(fname).read()
+        return GameLog(name, bs)
+    
+    def save(self):
+        fname = GameLog.get_fname(self.name)
+        f = open(fname, "wb")
+        f.write(self.bytestring)
+        f.close()
+
+    def show(self):
+        print(f"run {self.name}:")
+        print(json.dumps(self.data, indent=2))
+
+        
+    
 def iter_logs():
     for month in MONTHS:
         fname = get_fname(month)
@@ -57,18 +88,22 @@ def iter_logs():
         for member in tf.getmembers():
             if member.isdir():
                 continue
+            name = os.path.basename(member.name)
             f = tf.extractfile(member)
             if f is None:
                 print(member)
                 raise Exception("could not extract")
-            yield f.read()
+            bs = f.read()
+            game = GameLog(name, bs)
+            yield game
+            
 
         
 if __name__ == "__main__":
     num = 0
-    for log in iter_logs():
+    for game in iter_logs():
         num += 1
         if num % 100 != 0:
             continue
-        print(f"run {num}:")
-        print(log)
+        game.show()
+        break
