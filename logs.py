@@ -51,6 +51,10 @@ class GameLog(object):
         self.bytestring = bytestring
         string = self.bytestring.decode(encoding="utf-8", errors="replace")
         self.data = json.loads(string)
+        if not self.data:
+            raise ValueError("game log should not be null")
+        if type(self.data) == list:
+            raise ValueError("game log should not be a list")
 
     def ascension(self):
         return self.data.get("ascension_level", 0)
@@ -60,7 +64,7 @@ class GameLog(object):
 
     @staticmethod
     def get_fname(name):
-        return os.path.join(CACHE, "saved", name)
+        return os.path.join(CACHE, "local", name)
 
     @staticmethod
     def load(name):
@@ -94,16 +98,31 @@ def iter_logs():
                 print(member)
                 raise Exception("could not extract")
             bs = f.read()
-            game = GameLog(name, bs)
+            if not bs:
+                continue
+
+            try:
+                game = GameLog(name, bs)
+            except json.decoder.JSONDecodeError:
+                # Some of this input data is bad json
+                continue
+            except ValueError:
+                # Used for my own format skips
+                continue
+            
             yield game
             
 
         
-if __name__ == "__main__":
-    num = 0
+def save_high_levels_locally():
+    counter = 0
     for game in iter_logs():
-        num += 1
-        if num % 100 != 0:
-            continue
-        game.show()
-        break
+        if game.is_high_level():
+            game.save()
+            counter += 1
+            if counter % 100 == 0:
+                print(counter, "games saved locally")
+    print("done")
+
+if __name__ == "__main__":
+    pass
