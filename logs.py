@@ -112,7 +112,7 @@ def iter_logs():
             
             yield game
             
-
+# TODO: write iter_local, to loop over the local games
         
 def save_high_levels_locally():
     counter = 0
