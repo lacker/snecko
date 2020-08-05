@@ -72,13 +72,21 @@ def xlist(subparser):
 
 # Subparsers has a subparser for each key
 # Returns an object of the provided class, constructed with no arguments
+# Key ends with "?" to indicate optionality
 def xobj(cls, subparsers):
     def find_answer(data):
         if type(data) != dict:
             raise ValueError(f"expected dict but got {data}")
         answer = cls()
         for key, subparser in subparsers.items():
+            optional = False
+            if key.endswith("?"):
+                key = key.strip("?")
+                optional = True
             if key not in data:
+                if optional:
+                    answer.__setattr__(key, None)
+                    continue
                 raise ValueError(f"expected key {key} but data is {data}")
             value = subparser(data.get(key))
             answer.__setattr__(key, value)
@@ -89,11 +97,27 @@ def xobj(cls, subparsers):
 class CardChoice(object):
     def __init__(self):
         pass
-
 CardChoice.parser = xobj(CardChoice, {
     "not_picked": xlist(xstr),
     "picked": xstr,
     "floor": xint,
+})
+
+class EventChoice(object):
+    def __init__(self):
+        pass
+EventChoice.parser = xobj(EventChoice, {
+    "cards_removed?": xlist(xstr),
+    "floor": xint,
+})
+
+class CampfireChoice(object):
+    def __init__(self):
+        pass
+CampfireChoice.parser = xobj(CampfireChoice, {
+    "data?": xstr,
+    "floor": xint,
+    "key": xstr,
 })
 
 class GameLog(object):
@@ -114,8 +138,10 @@ class GameLog(object):
             GameLog.parser = xobj(GameLog, {
                 "ascension_level": xint,
                 "card_choices": xlist(CardChoice.parser),
+                "campfire_choices": xlist(CampfireChoice.parser),
                 "character_chosen": xstr,
                 "chose_seed": xbool,
+                "event_choices": xlist(EventChoice.parser),
                 "floor_reached": xint,
                 "is_daily": xbool,
                 "is_endless": xbool,
@@ -177,15 +203,34 @@ class GameLog(object):
         return answer
         
     def validate_deck(self):
+        # A list of floor, is_remove, card tuples.
+        # Upgrades are represented as an add and a remove for the same floor.
+        # is_remove is a bool so that sorting will let us handle adds before removes.
+        changes = []
+        for choice in self.card_choices:
+            if choice.picked != "SKIP":
+                changes.append((choice.floor, False, choice.picked))
+        for f, item in zip(self.item_purchase_floors, self.items_purchased):
+            changes.append((f, False, item))
+        for choice in self.event_choices:
+            if choice.cards_removed:
+                for card in choice.cards_removed:
+                    changes.append((choice.floor, True, card))
+        for choice in self.campfire_choices:
+            if choice.key == "SMITH":
+                changes.append((choice.floor, True, choice.data))
+                changes.append((choice.floor, False, choice.data + "+1"))
+                
         deck = self.initial_deck()
-        for floor in range(1, self.floor_reached):
-            for choice in self.card_choices:
-                if choice.floor == floor:
-                    deck.append(choice.picked)
-            for f, item in zip(self.item_purchase_floors, self.items_purchased):
-                if floor == f:
-                    deck.append(item)
-
+        for floor, is_remove, card in changes:
+            if is_remove:
+                if card not in deck:
+                    print(f"could not remove {card} at floor {floor} because deck is {deck}")
+                    return False
+                deck.remove(card)
+            else:
+                deck.append(card)
+                
         master = sorted(self.master_deck)
         repro = sorted(deck)
         if master == repro:
@@ -193,7 +238,7 @@ class GameLog(object):
         
         self.show()
         print(f"reproduced deck: {repro}")
-        print(f"actual deck: {master}")
+        print(f"the actual deck: {master}")
         return False
         
     
@@ -252,7 +297,7 @@ if __name__ == "__main__":
             print(f"validated {validated} decks")
             break
         validated += 1
-        if den % 10 == 0:
+        if validated % 10 == 0:
             print(f"validated {validated}")
 
 
