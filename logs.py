@@ -108,6 +108,8 @@ class EventChoice(object):
         pass
 EventChoice.parser = xobj(EventChoice, {
     "cards_removed?": xlist(xstr),
+    "event_name": xstr,
+    "player_choice": xstr,
     "floor": xint,
 })
 
@@ -147,6 +149,8 @@ class GameLog(object):
                 "is_endless": xbool,
                 "items_purchased": xlist(xstr),
                 "item_purchase_floors": xlist(xint),
+                "items_purged": xlist(xstr),
+                "items_purged_floors": xlist(xint),
                 "master_deck": xlist(xstr),
             })
         
@@ -201,7 +205,7 @@ class GameLog(object):
         else:
             raise ValueError(f"character_chosen is {self.character_chosen}")
         return answer
-        
+
     def validate_deck(self):
         # A list of floor, is_remove, card tuples.
         # Upgrades are represented as an add and a remove for the same floor.
@@ -210,9 +214,9 @@ class GameLog(object):
         for choice in self.card_choices:
             if choice.picked != "SKIP":
                 changes.append((choice.floor, False, choice.picked))
-        for f, item in zip(self.item_purchase_floors, self.items_purchased):
-            changes.append((f, False, item))
         for choice in self.event_choices:
+            if choice.event_name == "Liars Game" and choice.player_choice == "agreed":
+                changes.append((choice.floor, False, "Doubt"))
             if choice.cards_removed:
                 for card in choice.cards_removed:
                     changes.append((choice.floor, True, card))
@@ -220,11 +224,16 @@ class GameLog(object):
             if choice.key == "SMITH":
                 changes.append((choice.floor, True, choice.data))
                 changes.append((choice.floor, False, choice.data + "+1"))
+        for floor, item in zip(self.item_purchase_floors, self.items_purchased):
+            changes.append((floor, False, item))
+        for floor, item in zip(self.items_purged_floors, self.items_purged):
+            changes.append((floor, True, item))
                 
         deck = self.initial_deck()
         for floor, is_remove, card in changes:
             if is_remove:
                 if card not in deck:
+                    self.show()
                     print(f"could not remove {card} at floor {floor} because deck is {deck}")
                     return False
                 deck.remove(card)
