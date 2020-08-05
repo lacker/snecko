@@ -85,6 +85,7 @@ def xobj(cls, subparsers):
         return answer
     return find_answer
 
+
 class GameLog(object):
     parser = None
     
@@ -105,6 +106,7 @@ class GameLog(object):
                 "chose_seed": xbool,
                 "is_daily": xbool,
                 "is_endless": xbool,
+                "master_deck": xlist(xstr),
             })
         
         string = bytestring.decode(encoding="utf-8", errors="replace")
@@ -204,5 +206,7 @@ if __name__ == "__main__":
             num += 1
         if den % 1000 == 0:
             print(f"{num}/{den} = {num/den} are good")
+        if den == 107610:
+            game.show()
     print(f"{num}/{den} = {num/den} are good")
 
