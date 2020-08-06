@@ -309,7 +309,8 @@ class GameLog(object):
                 deck.remove(data)
             elif action_type == ADDITION:
                 if data not in CARDS:
-                    raise ValueError(f"cannot add bad card: {data}")                               
+                    # This was probably a modded game. Just ditch
+                    return
                 deck.append(data)
             else:
                 raise ValueError(f"unknown action_type: {action_type}")
@@ -373,6 +374,7 @@ def generate_csv(character):
     The columns are:
     Character
     Floor
+    Deck Size
     Choice1
     Choice2
     Choice3
@@ -380,7 +382,7 @@ def generate_csv(character):
     Hundreds of columns for cards, with a count of how many are in the deck
     """
     cards = list(CARDS)
-    header = "Character,Floor,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+    header = "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
     print(header)
     games = 0
     for game in iter_local():
@@ -398,7 +400,7 @@ def generate_csv(character):
             deck_entries = []
             for card in cards:
                 deck_entries.append(str(deck.count(card)))
-            row = [game.character_chosen, str(floor)] + choices + [picked_value] + deck_entries
+            row = [game.character_chosen, str(floor), str(len(deck))] + choices + [picked_value] + deck_entries
             print(",".join(row))
         games += 1
         if games % 100 == 0:
