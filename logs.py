@@ -6,6 +6,8 @@ import requests
 import tarfile
 import urllib
 
+from items import CARDS
+
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
 
 MONTHS = ["2019-02",
@@ -93,6 +95,16 @@ def xobj(cls, subparsers):
         return answer
     return find_answer
 
+def is_card(s):
+    return not s.endswith("Potion")
+
+class BossRelicChoice(object):
+    def __init__(self):
+        pass
+BossRelicChoice.parser = xobj(BossRelicChoice, {
+    "not_picked": xlist(xstr),
+    "picked?": xstr,
+})
 
 class CardChoice(object):
     def __init__(self):
@@ -108,6 +120,8 @@ class EventChoice(object):
         pass
 EventChoice.parser = xobj(EventChoice, {
     "cards_removed?": xlist(xstr),
+    "cards_transformed?": xlist(xstr),
+    "cards_obtained?": xlist(xstr),
     "event_name": xstr,
     "player_choice": xstr,
     "floor": xint,
@@ -139,10 +153,12 @@ class GameLog(object):
         if not GameLog.parser:
             GameLog.parser = xobj(GameLog, {
                 "ascension_level": xint,
+                "boss_relics": xlist(BossRelicChoice.parser),
                 "card_choices": xlist(CardChoice.parser),
                 "campfire_choices": xlist(CampfireChoice.parser),
                 "character_chosen": xstr,
                 "chose_seed": xbool,
+                "daily_mods?": xlist(xstr),
                 "event_choices": xlist(EventChoice.parser),
                 "floor_reached": xint,
                 "is_daily": xbool,
@@ -152,6 +168,8 @@ class GameLog(object):
                 "items_purged": xlist(xstr),
                 "items_purged_floors": xlist(xint),
                 "master_deck": xlist(xstr),
+                "neow_bonus": xstr,
+                "relics": xlist(xstr),
             })
         
         string = bytestring.decode(encoding="utf-8", errors="replace")
@@ -179,8 +197,11 @@ class GameLog(object):
         pass
 
     def is_good(self):        
-        if self.is_daily or self.is_endless or self.chose_seed:
+        if self.is_daily or self.is_endless or self.chose_seed or self.daily_mods:
             return False
+        for card in self.master_deck:
+            if card not in CARDS:
+                return False
         return self.ascension_level >= 17 
     
     def save(self):
@@ -196,7 +217,7 @@ class GameLog(object):
     def initial_deck(self):
         if self.character_chosen == "IRONCLAD":
             return ["Strike_R"] * 5 + ["Defend_R"] * 4 + ["Bash", "AscendersBane"]
-        elif self.character_chosen == "SILENT":
+        elif self.character_chosen == "THE_SILENT":
             return ["Strike_G"] * 5 + ["Defend_G"] * 5 + ["Neutralize", "Survivor", "AscendersBane"]
         elif self.character_chosen == "DEFECT":
             return ["Strike_B"] * 4 + ["Defend_B"] * 4 + ["Dualcast", "Zap", "AscendersBane"]
@@ -220,21 +241,33 @@ class GameLog(object):
             if choice.cards_removed:
                 for card in choice.cards_removed:
                     changes.append((choice.floor, True, card))
+            if choice.cards_transformed:
+                for card in choice.cards_transformed:
+                    changes.append((choice.floor, True, card))
+            if choice.cards_obtained:
+                for card in choice.cards_obtained:
+                    changes.append((choice.floor, False, card))
+
         for choice in self.campfire_choices:
             if choice.key == "SMITH":
                 changes.append((choice.floor, True, choice.data))
                 changes.append((choice.floor, False, choice.data + "+1"))
         for floor, item in zip(self.item_purchase_floors, self.items_purchased):
-            changes.append((floor, False, item))
+            if item in CARDS:
+                changes.append((floor, False, item))
         for floor, item in zip(self.items_purged_floors, self.items_purged):
-            changes.append((floor, True, item))
-                
+            if item in CARDS:
+                changes.append((floor, True, item))
+
+        for floor, choice in zip([17, 33, 50], self.boss_relics):
+            if choice.picked == "Calling Bell":
+                changes.append((floor, False, "CurseOfTheBell"))
+            
         deck = self.initial_deck()
+        changes.sort()
         for floor, is_remove, card in changes:
             if is_remove:
                 if card not in deck:
-                    self.show()
-                    print(f"could not remove {card} at floor {floor} because deck is {deck}")
                     return False
                 deck.remove(card)
             else:
@@ -242,13 +275,7 @@ class GameLog(object):
                 
         master = sorted(self.master_deck)
         repro = sorted(deck)
-        if master == repro:
-            return True
-        
-        self.show()
-        print(f"reproduced deck: {repro}")
-        print(f"the actual deck: {master}")
-        return False
+        return master == repro
         
     
     
@@ -299,14 +326,23 @@ def save_good_games_locally():
     print("done. total:", counter)
 
     
-if __name__ == "__main__":
+def validate_local():
     validated = 0
-    for game in iter_local():
-        if not game.validate_deck():
-            print(f"validated {validated} decks")
-            break
-        validated += 1
-        if validated % 10 == 0:
-            print(f"validated {validated}")
+    buggy = 0
+    moddy = 0
+    try:
+        for game in iter_local():
+            if not game.is_good():
+                moddy += 1
+                continue
+            if game.validate_deck():
+                validated += 1
+            else:
+                buggy += 1
+    finally:
+        print(f"buggy: {buggy}")
+        print(f"validated: {validated}")
+        print(f"moddy: {moddy}")
 
-
+if __name__ == "__main__":
+    validate_local()
