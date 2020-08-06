@@ -142,7 +142,11 @@ def upgrade(card):
     if "+" not in card:
         return card + "+1"
     left, right = card.split("+")
-    return left + "+" + str(int(right) + 1)
+    answer = left + "+" + str(int(right) + 1)
+    if answer not in CARDS:
+        # Guess
+        return card
+    return answer
 
 class GameLog(object):
     parser = None
