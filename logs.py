@@ -2,7 +2,9 @@
 
 import json
 import os
+import random
 import requests
+import sys
 import tarfile
 import urllib
 
@@ -136,6 +138,12 @@ CampfireChoice.parser = xobj(CampfireChoice, {
     "key": xstr,
 })
 
+def upgrade(card):
+    if "+" not in card:
+        return card + "+1"
+    left, right = card.split("+")
+    return left + "+" + str(int(right) + 1)
+
 class GameLog(object):
     parser = None
     
@@ -227,55 +235,84 @@ class GameLog(object):
             raise ValueError(f"character_chosen is {self.character_chosen}")
         return answer
 
-    def validate_deck(self):
-        # A list of floor, is_remove, card tuples.
-        # Upgrades are represented as an add and a remove for the same floor.
-        # is_remove is a bool so that sorting will let us handle adds before removes.
-        changes = []
+    def simulate(self):
+        """
+        Yields one tuple for each card choice.
+        (current floor, current decklist, picked cards, not picked cards).
+        """
+        # The types of action.
+        # Upgrades are represented as an addition and removal for the same floor.
+        # Order is important.
+        DECISION = 0
+        ADDITION = 1
+        REMOVAL = 2
+        
+        # actions is a list of floor, type, data tuples.
+        # For decision, data is a tuple of lists, (picked, not_picked).
+        # Otherwise, data is the card name.
+        
+        actions = []
         for choice in self.card_choices:
-            if choice.picked != "SKIP":
-                changes.append((choice.floor, False, choice.picked))
+            if choice.picked == "SKIP":
+                picked = []
+            else:
+                picked = [choice.picked]
+            actions.append((choice.floor, DECISION, (picked, choice.not_picked)))
+
+            if choice.picked not in ["SKIP", "Singing Bowl"]:
+                actions.append((choice.floor, ADDITION, choice.picked))
+
         for choice in self.event_choices:
             if choice.event_name == "Liars Game" and choice.player_choice == "agreed":
-                changes.append((choice.floor, False, "Doubt"))
+                actions.append((choice.floor, ADDITION, "Doubt"))
             if choice.cards_removed:
                 for card in choice.cards_removed:
-                    changes.append((choice.floor, True, card))
+                    actions.append((choice.floor, REMOVAL, card))
             if choice.cards_transformed:
                 for card in choice.cards_transformed:
-                    changes.append((choice.floor, True, card))
+                    actions.append((choice.floor, REMOVAL, card))
             if choice.cards_obtained:
                 for card in choice.cards_obtained:
-                    changes.append((choice.floor, False, card))
+                    actions.append((choice.floor, ADDITION, card))
 
         for choice in self.campfire_choices:
             if choice.key == "SMITH":
-                changes.append((choice.floor, True, choice.data))
-                changes.append((choice.floor, False, choice.data + "+1"))
+                actions.append((choice.floor, REMOVAL, choice.data))
+                actions.append((choice.floor, ADDITION, upgrade(choice.data)))
+                
         for floor, item in zip(self.item_purchase_floors, self.items_purchased):
             if item in CARDS:
-                changes.append((floor, False, item))
+                actions.append((floor, ADDITION, item))
         for floor, item in zip(self.items_purged_floors, self.items_purged):
             if item in CARDS:
-                changes.append((floor, True, item))
+                actions.append((floor, REMOVAL, item))
 
         for floor, choice in zip([17, 33, 50], self.boss_relics):
             if choice.picked == "Calling Bell":
-                changes.append((floor, False, "CurseOfTheBell"))
-            
+                actions.append((floor, ADDITION, "CurseOfTheBell"))
+
         deck = self.initial_deck()
-        changes.sort()
-        for floor, is_remove, card in changes:
-            if is_remove:
-                if card not in deck:
-                    return False
-                deck.remove(card)
+        actions.sort()
+        for floor, action_type, data in actions:
+            if action_type == DECISION:
+                picked, not_picked = data
+                yield floor, deck, picked, not_picked
+            elif action_type == REMOVAL:
+                if data not in deck:
+                    continue
+                if data not in CARDS:
+                    raise ValueError(f"cannot remove bad card: {data}")
+                deck.remove(data)
+            elif action_type == ADDITION:
+                if data not in CARDS:
+                    raise ValueError(f"cannot add bad card: {data}")                               
+                deck.append(data)
             else:
-                deck.append(card)
+                raise ValueError(f"unknown action_type: {action_type}")
                 
         master = sorted(self.master_deck)
         repro = sorted(deck)
-        return master == repro
+        # You can check if master==repro here to see how accurate the simulation was.
         
     
     
@@ -326,23 +363,58 @@ def save_good_games_locally():
     print("done. total:", counter)
 
     
-def validate_local():
-    validated = 0
-    buggy = 0
-    moddy = 0
-    try:
-        for game in iter_local():
-            if not game.is_good():
-                moddy += 1
+def generate_csv(character):
+    """
+    Prints out one big csv with all training data.
+    The columns are:
+    Character
+    Floor
+    Choice1
+    Choice2
+    Choice3
+    Picked - 1, 2, 3, or skip
+    Hundreds of columns for cards, with a count of how many are in the deck
+    """
+    cards = list(CARDS)
+    header = "Character,Floor,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+    print(header)
+    games = 0
+    for game in iter_local():
+        if not game.is_good() or game.character_chosen != character:
+            continue
+        for floor, deck, picked, not_picked in game.simulate():
+            choices = picked + not_picked
+            if len(choices) != 3:
                 continue
-            if game.validate_deck():
-                validated += 1
+            random.shuffle(choices)
+            if picked and picked[0] in choices:
+                picked_value = str(choices.index(picked[0]) + 1)
             else:
-                buggy += 1
-    finally:
-        print(f"buggy: {buggy}")
-        print(f"validated: {validated}")
-        print(f"moddy: {moddy}")
+                picked_value = "skip"
+            deck_entries = []
+            for card in cards:
+                deck_entries.append(str(deck.count(card)))
+            row = [game.character_chosen, str(floor)] + choices + [picked_value] + deck_entries
+            print(",".join(row))
+        games += 1
+        if games % 100 == 0:
+            print(f"processed {games} games", file=sys.stderr)
+                               
+def count_cards():
+    """
+    Useful for printing out the least frequent cards, so we can clean up the data.
+    """
+    count = {}
+    for game in iter_local():
+        if not game.is_good():
+            continue
+        for card in game.master_deck:
+            count[card] = count.get(card, 0) + 1
 
+    counts = [(value, key) for key, value in count.items()]
+    counts.sort()
+    for count in counts:
+        print(count)
+            
 if __name__ == "__main__":
-    validate_local()
+    generate_csv("IRONCLAD")
