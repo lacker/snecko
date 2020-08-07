@@ -13,7 +13,8 @@ conda install -c pytorch -c fastai fastai
 conda install -c conda-forge jupyterlab
 conda install -c conda-forge notebook
 
-# Now you can run stuff.
+# Run jupyter, then open scratch.ipynb
+jupyter notebook
 
 # In subsequent runs, instead of creating a new environment, reactivate your old one:
 conda activate snecko
