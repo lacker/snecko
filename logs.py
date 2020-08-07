@@ -436,6 +436,6 @@ def count_cards():
     counts.sort()
     for count in counts:
         print(count)
-            
+        
 if __name__ == "__main__":
     generate_csvs()
