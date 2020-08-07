@@ -11,6 +11,7 @@ import urllib
 from items import CARDS
 
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
+TMP = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
 
 MONTHS = ["2019-02",
           "2019-03",
@@ -29,6 +30,8 @@ MONTHS = ["2019-02",
           "2020-04",
           "2020-05",
           ]
+
+CHARACTERS = ["IRONCLAD", "THE_SILENT", "DEFECT", "WATCHER"]
 
 def get_fname(month):
     return os.path.join(CACHE, month + ".tar.gz")
@@ -368,7 +371,7 @@ def save_good_games_locally():
     print("done. total:", counter)
 
     
-def generate_csv(character):
+def generate_csv(character, file=sys.stdout):
     """
     Prints out one big csv with all training data.
     The columns are:
@@ -383,7 +386,7 @@ def generate_csv(character):
     """
     cards = sorted(list(CARDS))
     header = "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
-    print(header)
+    print(header, file=file)
     games = 0
     for game in iter_local():
         if not game.is_good() or game.character_chosen != character:
@@ -401,11 +404,18 @@ def generate_csv(character):
             for card in cards:
                 deck_entries.append(str(deck.count(card)))
             row = [game.character_chosen, str(floor), str(len(deck))] + choices + [picked_value] + deck_entries
-            print(",".join(row))
+            print(",".join(row), file=file)
         games += 1
-        if games % 100 == 0:
+        if games % 1000 == 0:
             print(f"processed {games} games", file=sys.stderr)
-                               
+
+def generate_csvs():
+    for char in CHARACTERS:
+        fname = os.path.join(TMP, char.lower() + ".csv")
+        f = open(fname, "w")
+        print(f"aggregating data for {fname}")
+        generate_csv(char, file=f)
+    
 def count_cards():
     """
     Useful for printing out the least frequent cards, so we can clean up the data.
@@ -423,4 +433,4 @@ def count_cards():
         print(count)
             
 if __name__ == "__main__":
-    generate_csv("THE_SILENT")
+    generate_csvs()
