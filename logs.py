@@ -409,9 +409,14 @@ def generate_csv(character, file=sys.stdout):
         if games % 1000 == 0:
             print(f"processed {games} games", file=sys.stderr)
 
+def character_filename(char):
+    if char not in CHARACTERS:
+        raise ValueError(f"unknown character: {char}")
+    return os.path.join(TMP, char.lower() + ".csv")
+
 def generate_csvs():
     for char in CHARACTERS:
-        fname = os.path.join(TMP, char.lower() + ".csv")
+        fname = character_filename(char)
         f = open(fname, "w")
         print(f"aggregating data for {fname}")
         generate_csv(char, file=f)
