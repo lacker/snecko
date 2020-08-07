@@ -381,7 +381,7 @@ def generate_csv(character):
     Picked - 1, 2, 3, or skip
     Hundreds of columns for cards, with a count of how many are in the deck
     """
-    cards = list(CARDS)
+    cards = sorted(list(CARDS))
     header = "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
     print(header)
     games = 0
@@ -423,4 +423,4 @@ def count_cards():
         print(count)
             
 if __name__ == "__main__":
-    generate_csv("IRONCLAD")
+    generate_csv("THE_SILENT")
