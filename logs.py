@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import io
 import json
 import os
 import random
@@ -32,6 +33,9 @@ MONTHS = ["2019-02",
           ]
 
 CHARACTERS = ["IRONCLAD", "THE_SILENT", "DEFECT", "WATCHER"]
+
+def cachefile(name):
+    return os.path.join(CACHE, name)
 
 def get_fname(month):
     return os.path.join(CACHE, month + ".tar.gz")
@@ -370,6 +374,21 @@ def save_good_games_locally():
                 print(counter, "games saved locally")
     print("done. total:", counter)
 
+def csv_header(cards):
+    return "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+
+def mini_csv(character, floor, deck, choices):
+    """
+    Returns a fake csv file with one row
+    """
+    for card in deck:
+        if card not in CARDS:
+            raise ValueError(f"bad card: {card}")
+    cards = sorted(list(CARDS))
+    header = csv_header(cards)
+    deck_entries = [str(deck.count(card)) for card in cards]
+    line = [character, str(floor), str(len(deck))] + choices + ["skip"] + deck_entries
+    return io.StringIO(header + "\n" + ",".join(line) + "\n") 
     
 def generate_csv(character, file=sys.stdout):
     """
@@ -385,7 +404,7 @@ def generate_csv(character, file=sys.stdout):
     Hundreds of columns for cards, with a count of how many are in the deck
     """
     cards = sorted(list(CARDS))
-    header = "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+    header = csv_header(cards)
     print(header, file=file)
     games = 0
     for game in iter_local():
@@ -400,9 +419,7 @@ def generate_csv(character, file=sys.stdout):
                 picked_value = str(choices.index(picked[0]) + 1)
             else:
                 picked_value = "skip"
-            deck_entries = []
-            for card in cards:
-                deck_entries.append(str(deck.count(card)))
+            deck_entries = [str(deck.count(card)) for card in cards]
             row = [game.character_chosen, str(floor), str(len(deck))] + choices + [picked_value] + deck_entries
             print(",".join(row), file=file)
         games += 1
