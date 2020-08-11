@@ -12,6 +12,8 @@ import urllib
 from cards import CARDS
 from relics import RELICS
 
+ITEMS = CARDS.union(RELICS)
+
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
 TMP = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
 
@@ -35,6 +37,28 @@ MONTHS = [
 ]
 
 CHARACTERS = ["IRONCLAD", "THE_SILENT", "DEFECT", "WATCHER"]
+
+
+def closeness(word, target):
+    answer = 0
+    for i in range(len(word)):
+        chunk = word[i : i + 3]
+        if len(chunk) < 3:
+            break
+        if chunk in target:
+            answer += 1
+    return answer
+
+
+def guess_name(item, targets):
+    best_guess = "absolutely no idea"
+    best_score = 0
+    for guess in targets:
+        score = closeness(item, guess)
+        if score > best_score:
+            best_guess = guess
+            best_score = score
+    return best_guess
 
 
 def cachefile(name):
@@ -466,31 +490,20 @@ def csv_header(cards, relics):
     )
 
 
-def validate_cards(cards):
-    for card in cards:
-        if card not in CARDS:
-            raise ValueError(f"bad card: {card}")
-
-
-def validate_relics(relics):
-    for relic in relics:
-        if relic not in RELICS:
-            raise ValueError(f"bad relic: {relic}")
-
-
-def validate_items(items):
-    for item in items:
-        if item not in CARDS and item not in RELICS:
-            raise ValueError(f"bad item: {item}")
+def validate_names(names, targets):
+    for name in names:
+        if name not in targets:
+            guess = guess_name(name, targets)
+            raise ValueError(f'bad name: {name}. Did you mean "{guess}"?')
 
 
 def mini_csv(character, floor, deck, relics, choices):
     """
     Returns a fake csv file with one row
     """
-    validate_cards(deck)
-    validate_relics(relics)
-    validate_items(choices)
+    validate_names(deck, CARDS)
+    validate_names(relics, RELICS)
+    validate_names(choices, ITEMS)
 
     all_cards = sorted(list(CARDS))
     all_relics = sorted(list(RELICS))
