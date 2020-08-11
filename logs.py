@@ -556,11 +556,4 @@ def count_relics():
 
 if __name__ == "__main__":
     # generate_csvs(chars=["IRONCLAD"])
-    count = 0
-    for game in iter_local():
-        if game.character_chosen != "IRONCLAD":
-            continue
-        count += 1
-        if count >= 2:
-            game.show()
-            break
+    count_relics()

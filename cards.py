@@ -1,4 +1,4 @@
-# NOTE: none of these names have a comma in them
+# NOTE: none of these names has a comma, which is handy for csvs.
 
 CARDS = set(
     [
