@@ -7,6 +7,7 @@ Tools for analyzing Slay the Spire.
 # Install conda. I'll leave that to another guide, but I used Python 3.7 / 3.8 and miniconda.
 # First create a conda environment:
 conda create --name snecko
+conda activate snecko
 
 # Install dependencies
 conda install -c pytorch -c fastai fastai
