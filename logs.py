@@ -297,19 +297,21 @@ class GameLog(object):
     def simulate(self):
         """
         Yields one tuple for each card choice.
-        (current floor, current decklist, current relics, picked cards, not picked cards).
+        (current floor, current decklist, current relics, picked-list, not-picked-list).
         This might be more convenient as a "game state" object.
         """
         # The types of action.
         # Upgrades are represented as an addition and removal for the same floor.
         # Order is important.
-        ADD_RELIC = 0
+        ADD_NORMAL_RELIC = 0
         CARD_CHOICE = 1
         ADD_CARD = 2
         REMOVE_CARD = 3
+        RELIC_CHOICE = 4
+        ADD_BOSS_RELIC = 5
 
         # actions is a list of floor, type, data tuples.
-        # For decision, data is a tuple of lists, (picked, not_picked).
+        # For choices, data is a tuple of lists, (picked, not_picked).
         # Otherwise, data is the card name.
 
         actions = []
@@ -350,9 +352,16 @@ class GameLog(object):
 
         # Track the floor for any relic with a known floor
         relicmap = {}
-
-        for floor, choice in zip([17, 33, 50], self.boss_relics):
+        boss_relics = set()
+        for floor, choice in zip([16, 33, 50], self.boss_relics):
             relicmap[choice.picked] = floor
+            boss_relics.add(choice.picked)
+            if not choice.picked:
+                picked = []
+            else:
+                picked = [choice.picked]
+            actions.append((floor, RELIC_CHOICE, (picked, choice.not_picked)))
+
             if choice.picked == "Calling Bell":
                 actions.append((floor, ADD_CARD, "CurseOfTheBell"))
 
@@ -363,18 +372,21 @@ class GameLog(object):
         floor = 0
         for relic in self.relics:
             floor = relicmap.get(relic, floor)
-            actions.append((floor, ADD_RELIC, relic))
+            if relic in boss_relics:
+                actions.append((floor, ADD_BOSS_RELIC, relic))
+            else:
+                actions.append((floor, ADD_NORMAL_RELIC, relic))
 
         deck = self.initial_deck()
         relics = []
         actions.sort()
         for floor, action_type, data in actions:
-            if action_type == ADD_RELIC:
+            if action_type in [ADD_NORMAL_RELIC, ADD_BOSS_RELIC]:
                 if data not in RELICS:
                     # Probably modded
                     return
                 relics.append(data)
-            elif action_type == CARD_CHOICE:
+            elif action_type in [CARD_CHOICE, RELIC_CHOICE]:
                 picked, not_picked = data
                 yield floor, deck, relics, picked, not_picked
             elif action_type == REMOVE_CARD:
@@ -456,10 +468,22 @@ def csv_header(cards, relics):
     )
 
 
-def validate_cards(card_list):
-    for card in card_list:
+def validate_cards(cards):
+    for card in cards:
         if card not in CARDS:
             raise ValueError(f"bad card: {card}")
+
+
+def validate_relics(relics):
+    for relic in relics:
+        if relic not in RELICS:
+            raise ValueError(f"bad relic: {relic}")
+
+
+def validate_items(items):
+    for item in items:
+        if item not in CARDS and item not in RELICS:
+            raise ValueError(f"bad item: {item}")
 
 
 def mini_csv(character, floor, deck, relics, choices):
@@ -468,7 +492,7 @@ def mini_csv(character, floor, deck, relics, choices):
     """
     validate_cards(deck)
     validate_relics(relics)
-    validate_cards(choices)
+    validate_items(choices)
 
     all_cards = sorted(list(CARDS))
     all_relics = sorted(list(RELICS))
@@ -485,7 +509,7 @@ def mini_csv(character, floor, deck, relics, choices):
     return io.StringIO(header + "\n" + ",".join(line) + "\n")
 
 
-def generate_csv(character, file=sys.stdout):
+def generate_csv(character=None, file=sys.stdout):
     """
     Prints out one big csv with all training data.
     The columns are:
@@ -505,7 +529,9 @@ def generate_csv(character, file=sys.stdout):
     print(header, file=file)
     games = 0
     for game in iter_wins():
-        if not game.is_good() or game.character_chosen != character:
+        if character and game.character_chosen != character:
+            continue
+        if not game.is_good():
             continue
         for floor, deck, relics, picked, not_picked in game.simulate():
             choices = picked + not_picked
@@ -532,8 +558,6 @@ def generate_csv(character, file=sys.stdout):
 
 
 def character_filename(char):
-    if char not in CHARACTERS:
-        raise ValueError(f"unknown character: {char}")
     return os.path.join(TMP, char.lower() + ".csv")
 
 
@@ -542,7 +566,14 @@ def generate_csvs(chars=CHARACTERS):
         fname = character_filename(char)
         f = open(fname, "w")
         print(f"aggregating data for {fname}")
-        generate_csv(char, file=f)
+        generate_csv(character=char, file=f)
+
+
+def generate_combined():
+    fname = character_filename("combined")
+    f = open(fname, "w")
+    print(f"aggregating data for all characters")
+    generate_csv(character=None, file=f)
 
 
 def count_cards():
@@ -589,4 +620,4 @@ def show_json(n):
 
 
 if __name__ == "__main__":
-    generate_csvs(chars=["IRONCLAD"])
+    generate_combined()
