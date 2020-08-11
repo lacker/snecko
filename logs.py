@@ -165,7 +165,7 @@ def upgrade(card):
 
 class GameLog(object):
     parser = None
-    
+
     def __init__(self):
         pass
 
@@ -199,7 +199,7 @@ class GameLog(object):
                 "relics": xlist(xstr),
                 "relics_obtained": xlist(RelicObtained.parser),
             })
-        
+
         string = bytestring.decode(encoding="utf-8", errors="replace")
         data = json.loads(string)
         game = GameLog.parser(data)
@@ -209,7 +209,7 @@ class GameLog(object):
         game.bytestring = bytestring
         game.data = data
         return game
-    
+
     @staticmethod
     def get_fname(name):
         return os.path.join(CACHE, "local", name)
@@ -224,15 +224,14 @@ class GameLog(object):
     def from_json(self, data):
         pass
 
-    def is_good(self):        
+    def is_good(self):
         if self.is_daily or self.is_endless or self.chose_seed or self.daily_mods:
             return False
         for card in self.master_deck:
             if card not in CARDS:
                 return False
-        # XXX
         return self.ascension_level >= 17 
-    
+
     def save(self):
         fname = GameLog.get_fname(self.name)
         f = open(fname, "wb")
@@ -269,11 +268,11 @@ class GameLog(object):
         CARD_CHOICE = 1
         ADD_CARD = 2
         REMOVE_CARD = 3
-        
+
         # actions is a list of floor, type, data tuples.
         # For decision, data is a tuple of lists, (picked, not_picked).
         # Otherwise, data is the card name.
-        
+
         actions = []
         for choice in self.card_choices:
             if choice.picked == "SKIP":
@@ -302,7 +301,7 @@ class GameLog(object):
             if choice.key == "SMITH":
                 actions.append((choice.floor, REMOVE_CARD, choice.data))
                 actions.append((choice.floor, ADD_CARD, upgrade(choice.data)))
-                
+
         for floor, item in zip(self.item_purchase_floors, self.items_purchased):
             if item in CARDS:
                 actions.append((floor, ADD_CARD, item))
@@ -352,8 +351,8 @@ class GameLog(object):
                 deck.append(data)
             else:
                 raise ValueError(f"unknown action_type: {action_type}")
-    
-    
+
+            
 def iter_logs():
     for month in MONTHS:
         fname = get_fname(month)
@@ -379,9 +378,9 @@ def iter_logs():
             except ValueError:
                 # Used for my own format skips
                 continue
-            
+
             yield game
-            
+
 def iter_local():
     for entry in os.scandir(os.path.join(CACHE, "local")):
         name = os.path.basename(entry.name)
@@ -389,7 +388,7 @@ def iter_local():
         bs = f.read()
         game = GameLog.parse(name, bs)
         yield game
-        
+
 def save_good_games_locally():
     counter = 0
     for game in iter_logs():
@@ -403,19 +402,24 @@ def save_good_games_locally():
 def csv_header(cards):
     return "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
 
+def validate_card_list(card_list):
+    for card in card_list:
+        if card not in CARDS:
+            raise ValueError(f"bad card: {card}")
+
 def mini_csv(character, floor, deck, choices):
     """
     Returns a fake csv file with one row
     """
-    for card in deck:
-        if card not in CARDS:
-            raise ValueError(f"bad card: {card}")
+    validate_card_list(deck)
+    validate_card_list(choices)
+
     cards = sorted(list(CARDS))
     header = csv_header(cards)
     deck_entries = [str(deck.count(card)) for card in cards]
     line = [character, str(floor), str(len(deck))] + choices + ["skip"] + deck_entries
-    return io.StringIO(header + "\n" + ",".join(line) + "\n") 
-    
+    return io.StringIO(header + "\n" + ",".join(line) + "\n")
+
 def generate_csv(character, file=sys.stdout):
     """
     Prints out one big csv with all training data.
@@ -463,7 +467,7 @@ def generate_csvs(chars=CHARACTERS):
         f = open(fname, "w")
         print(f"aggregating data for {fname}")
         generate_csv(char, file=f)
-    
+
 def count_cards():
     """
     Useful for printing out the least frequent cards, so we can clean up the data.
@@ -496,6 +500,7 @@ def count_relics():
     for count in counts:
         print(count)
         
+
 if __name__ == "__main__":
     # generate_csvs(chars=["IRONCLAD"])
     count = 0
