@@ -461,10 +461,8 @@ def save_good_games_locally():
 
 
 def csv_header(cards, relics):
-    return (
-        "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked,"
-        + ",".join(cards)
-        + ",".join(relics)
+    return "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(
+        cards + relics
     )
 
 
@@ -526,6 +524,7 @@ def generate_csv(character=None, file=sys.stdout):
     all_cards = sorted(list(CARDS))
     all_relics = sorted(list(RELICS))
     header = csv_header(all_cards, all_relics)
+    num_commas = header.count(",")
     print(header, file=file)
     games = 0
     for game in iter_wins():
@@ -551,7 +550,10 @@ def generate_csv(character=None, file=sys.stdout):
                 + deck_entries
                 + relic_entries
             )
-            print(",".join(row), file=file)
+            line = ",".join(row)
+            if line.count(",") != num_commas:
+                raise ValueError(f"bad line: {line}")
+            print(line, file=file)
         games += 1
         if games % 1000 == 0:
             print(f"processed {games} games", file=sys.stderr)
