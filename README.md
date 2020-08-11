@@ -1,10 +1,10 @@
 # snecko
-Tools for analyzing Slay the Spire
+Tools for analyzing Slay the Spire.
 
 # setup
 
 ```bash
-# Install conda. I'll leave that to another guide.
+# Install conda. I'll leave that to another guide, but I used Python 3.7 / 3.8 and miniconda.
 # First create a conda environment:
 conda create --name snecko
 
