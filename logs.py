@@ -430,6 +430,13 @@ def iter_local():
         yield game
 
 
+def iter_wins():
+    """It counts as a win if you beat the regular boss. Heart not required"""
+    for game in iter_local():
+        if game.floor_reached > 50:
+            yield game
+
+
 def save_good_games_locally():
     counter = 0
     for game in iter_logs():
@@ -441,7 +448,7 @@ def save_good_games_locally():
     print("done. total:", counter)
 
 
-def csv_header(cards):
+def csv_header(cards, relics):
     return (
         "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked,"
         + ",".join(cards)
@@ -465,7 +472,7 @@ def mini_csv(character, floor, deck, relics, choices):
 
     all_cards = sorted(list(CARDS))
     all_relics = sorted(list(RELICS))
-    header = csv_header(cards)
+    header = csv_header(all_cards, all_relics)
     deck_entries = [str(deck.count(card)) for card in all_cards]
     relic_entries = [str(relics.count(relic)) for relic in all_relics]
     line = (
@@ -489,14 +496,15 @@ def generate_csv(character, file=sys.stdout):
     Choice2
     Choice3
     Picked - 1, 2, 3, or skip
-    Hundreds of columns for cards, with a count of how many are in the deck
+    One column per card, with counts
+    One column per relic, with counts
     """
     all_cards = sorted(list(CARDS))
     all_relics = sorted(list(RELICS))
-    header = csv_header(cards)
+    header = csv_header(all_cards, all_relics)
     print(header, file=file)
     games = 0
-    for game in iter_local():
+    for game in iter_wins():
         if not game.is_good() or game.character_chosen != character:
             continue
         for floor, deck, relics, picked, not_picked in game.simulate():
@@ -569,6 +577,15 @@ def count_relics():
     counts.sort()
     for count in counts:
         print(count)
+
+
+def show_json(n):
+    count = 0
+    for game in iter_wins():
+        count += 1
+        if count >= n:
+            game.show()
+            break
 
 
 if __name__ == "__main__":
