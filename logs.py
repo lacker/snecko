@@ -635,4 +635,4 @@ def show_json(n):
 
 
 if __name__ == "__main__":
-    generate_combined()
+    generate_csvs()
