@@ -14,28 +14,31 @@ from cards import CARDS
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
 TMP = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
 
-MONTHS = ["2019-02",
-          "2019-03",
-          "2019-04",
-          "2019-05",
-          "2019-06",
-          "2019-07",
-          "2019-08",
-          "2019-09",
-          "2019-10",
-          "2019-11",
-          "2019-12",
-          "2020-01",
-          "2020-02",
-          "2020-03",
-          "2020-04",
-          "2020-05",
-          ]
+MONTHS = [
+    "2019-02",
+    "2019-03",
+    "2019-04",
+    "2019-05",
+    "2019-06",
+    "2019-07",
+    "2019-08",
+    "2019-09",
+    "2019-10",
+    "2019-11",
+    "2019-12",
+    "2020-01",
+    "2020-02",
+    "2020-03",
+    "2020-04",
+    "2020-05",
+]
 
 CHARACTERS = ["IRONCLAD", "THE_SILENT", "DEFECT", "WATCHER"]
 
+
 def cachefile(name):
     return os.path.join(CACHE, name)
+
 
 def get_fname(month):
     return os.path.join(CACHE, month + ".tar.gz")
@@ -44,7 +47,7 @@ def get_fname(month):
 def download_all():
     # Act like we're not a bot
     opener = urllib.request.build_opener()
-    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    opener.addheaders = [("User-agent", "Mozilla/5.0")]
     urllib.request.install_opener(opener)
 
     for month in MONTHS:
@@ -55,20 +58,24 @@ def download_all():
         print("downloading", url)
         urllib.request.urlretrieve(url, fname)
 
+
 def xint(data):
     answer = int(data)
     if answer != data:
         raise ValueError(f"expected int but got {data}")
     return answer
 
+
 def xstr(data):
     if type(data) != str:
         raise ValueError(f"expected str but got {data}")
     return data
 
+
 def xbool(data):
     if type(data) != bool:
         raise ValueError(f"expected bool but got {data}")
+
 
 # Subparser is a function that takes the data and returns the value for a subtype
 def xlist(subparser):
@@ -79,7 +86,9 @@ def xlist(subparser):
         for value in data:
             answer.append(subparser(value))
         return answer
+
     return find_answer
+
 
 # Subparsers has a subparser for each key
 # Returns an object of the provided class, constructed with no arguments
@@ -102,56 +111,69 @@ def xobj(cls, subparsers):
             value = subparser(data.get(key))
             answer.__setattr__(key, value)
         return answer
+
     return find_answer
+
 
 def is_card(s):
     return not s.endswith("Potion")
 
+
 class BossRelicChoice(object):
     def __init__(self):
         pass
-BossRelicChoice.parser = xobj(BossRelicChoice, {
-    "not_picked": xlist(xstr),
-    "picked?": xstr,
-})
+
+
+BossRelicChoice.parser = xobj(
+    BossRelicChoice, {"not_picked": xlist(xstr), "picked?": xstr}
+)
+
 
 class CardChoice(object):
     def __init__(self):
         pass
-CardChoice.parser = xobj(CardChoice, {
-    "not_picked": xlist(xstr),
-    "picked": xstr,
-    "floor": xint,
-})
+
+
+CardChoice.parser = xobj(
+    CardChoice, {"not_picked": xlist(xstr), "picked": xstr, "floor": xint}
+)
+
 
 class EventChoice(object):
     def __init__(self):
         pass
-EventChoice.parser = xobj(EventChoice, {
-    "cards_removed?": xlist(xstr),
-    "cards_transformed?": xlist(xstr),
-    "cards_obtained?": xlist(xstr),
-    "event_name": xstr,
-    "player_choice": xstr,
-    "floor": xint,
-})
+
+
+EventChoice.parser = xobj(
+    EventChoice,
+    {
+        "cards_removed?": xlist(xstr),
+        "cards_transformed?": xlist(xstr),
+        "cards_obtained?": xlist(xstr),
+        "event_name": xstr,
+        "player_choice": xstr,
+        "floor": xint,
+    },
+)
+
 
 class CampfireChoice(object):
     def __init__(self):
         pass
-CampfireChoice.parser = xobj(CampfireChoice, {
-    "data?": xstr,
-    "floor": xint,
-    "key": xstr,
-})
+
+
+CampfireChoice.parser = xobj(
+    CampfireChoice, {"data?": xstr, "floor": xint, "key": xstr}
+)
+
 
 class RelicObtained(object):
     def __init__(self):
         pass
-RelicObtained.parser = xobj(RelicObtained, {
-    "floor": xint,
-    "key": xstr,
-})
+
+
+RelicObtained.parser = xobj(RelicObtained, {"floor": xint, "key": xstr})
+
 
 def upgrade(card):
     if "+" not in card:
@@ -162,6 +184,7 @@ def upgrade(card):
         # Guess
         return card
     return answer
+
 
 class GameLog(object):
     parser = None
@@ -178,27 +201,30 @@ class GameLog(object):
     @staticmethod
     def parse(name, bytestring):
         if not GameLog.parser:
-            GameLog.parser = xobj(GameLog, {
-                "ascension_level": xint,
-                "boss_relics": xlist(BossRelicChoice.parser),
-                "card_choices": xlist(CardChoice.parser),
-                "campfire_choices": xlist(CampfireChoice.parser),
-                "character_chosen": xstr,
-                "chose_seed": xbool,
-                "daily_mods?": xlist(xstr),
-                "event_choices": xlist(EventChoice.parser),
-                "floor_reached": xint,
-                "is_daily": xbool,
-                "is_endless": xbool,
-                "items_purchased": xlist(xstr),
-                "item_purchase_floors": xlist(xint),
-                "items_purged": xlist(xstr),
-                "items_purged_floors": xlist(xint),
-                "master_deck": xlist(xstr),
-                "neow_bonus": xstr,
-                "relics": xlist(xstr),
-                "relics_obtained": xlist(RelicObtained.parser),
-            })
+            GameLog.parser = xobj(
+                GameLog,
+                {
+                    "ascension_level": xint,
+                    "boss_relics": xlist(BossRelicChoice.parser),
+                    "card_choices": xlist(CardChoice.parser),
+                    "campfire_choices": xlist(CampfireChoice.parser),
+                    "character_chosen": xstr,
+                    "chose_seed": xbool,
+                    "daily_mods?": xlist(xstr),
+                    "event_choices": xlist(EventChoice.parser),
+                    "floor_reached": xint,
+                    "is_daily": xbool,
+                    "is_endless": xbool,
+                    "items_purchased": xlist(xstr),
+                    "item_purchase_floors": xlist(xint),
+                    "items_purged": xlist(xstr),
+                    "items_purged_floors": xlist(xint),
+                    "master_deck": xlist(xstr),
+                    "neow_bonus": xstr,
+                    "relics": xlist(xstr),
+                    "relics_obtained": xlist(RelicObtained.parser),
+                },
+            )
 
         string = bytestring.decode(encoding="utf-8", errors="replace")
         data = json.loads(string)
@@ -230,7 +256,7 @@ class GameLog(object):
         for card in self.master_deck:
             if card not in CARDS:
                 return False
-        return self.ascension_level >= 17 
+        return self.ascension_level >= 17
 
     def save(self):
         fname = GameLog.get_fname(self.name)
@@ -246,11 +272,23 @@ class GameLog(object):
         if self.character_chosen == "IRONCLAD":
             return ["Strike_R"] * 5 + ["Defend_R"] * 4 + ["Bash", "AscendersBane"]
         elif self.character_chosen == "THE_SILENT":
-            return ["Strike_G"] * 5 + ["Defend_G"] * 5 + ["Neutralize", "Survivor", "AscendersBane"]
+            return (
+                ["Strike_G"] * 5
+                + ["Defend_G"] * 5
+                + ["Neutralize", "Survivor", "AscendersBane"]
+            )
         elif self.character_chosen == "DEFECT":
-            return ["Strike_B"] * 4 + ["Defend_B"] * 4 + ["Dualcast", "Zap", "AscendersBane"]
+            return (
+                ["Strike_B"] * 4
+                + ["Defend_B"] * 4
+                + ["Dualcast", "Zap", "AscendersBane"]
+            )
         elif self.character_chosen == "WATCHER":
-            return ["Strike_P"] * 4 + ["Defend_P"] * 4 + ["Eruption", "Vigilance", "AscendersBane"]
+            return (
+                ["Strike_P"] * 4
+                + ["Defend_P"] * 4
+                + ["Eruption", "Vigilance", "AscendersBane"]
+            )
         else:
             raise ValueError(f"character_chosen is {self.character_chosen}")
         return answer
@@ -325,7 +363,7 @@ class GameLog(object):
         for relic in self.relics:
             floor = relicmap.get(relic, floor)
             actions.append((floor, ADD_RELIC, relic))
-                
+
         deck = self.initial_deck()
         relics = []
         actions.sort()
@@ -352,7 +390,7 @@ class GameLog(object):
             else:
                 raise ValueError(f"unknown action_type: {action_type}")
 
-            
+
 def iter_logs():
     for month in MONTHS:
         fname = get_fname(month)
@@ -381,6 +419,7 @@ def iter_logs():
 
             yield game
 
+
 def iter_local():
     for entry in os.scandir(os.path.join(CACHE, "local")):
         name = os.path.basename(entry.name)
@@ -388,6 +427,7 @@ def iter_local():
         bs = f.read()
         game = GameLog.parse(name, bs)
         yield game
+
 
 def save_good_games_locally():
     counter = 0
@@ -399,13 +439,16 @@ def save_good_games_locally():
                 print(counter, "games saved locally")
     print("done. total:", counter)
 
+
 def csv_header(cards):
     return "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+
 
 def validate_card_list(card_list):
     for card in card_list:
         if card not in CARDS:
             raise ValueError(f"bad card: {card}")
+
 
 def mini_csv(character, floor, deck, choices):
     """
@@ -419,6 +462,7 @@ def mini_csv(character, floor, deck, choices):
     deck_entries = [str(deck.count(card)) for card in cards]
     line = [character, str(floor), str(len(deck))] + choices + ["skip"] + deck_entries
     return io.StringIO(header + "\n" + ",".join(line) + "\n")
+
 
 def generate_csv(character, file=sys.stdout):
     """
@@ -450,16 +494,23 @@ def generate_csv(character, file=sys.stdout):
             else:
                 picked_value = "skip"
             deck_entries = [str(deck.count(card)) for card in cards]
-            row = [game.character_chosen, str(floor), str(len(deck))] + choices + [picked_value] + deck_entries
+            row = (
+                [game.character_chosen, str(floor), str(len(deck))]
+                + choices
+                + [picked_value]
+                + deck_entries
+            )
             print(",".join(row), file=file)
         games += 1
         if games % 1000 == 0:
             print(f"processed {games} games", file=sys.stderr)
 
+
 def character_filename(char):
     if char not in CHARACTERS:
         raise ValueError(f"unknown character: {char}")
     return os.path.join(TMP, char.lower() + ".csv")
+
 
 def generate_csvs(chars=CHARACTERS):
     for char in chars:
@@ -467,6 +518,7 @@ def generate_csvs(chars=CHARACTERS):
         f = open(fname, "w")
         print(f"aggregating data for {fname}")
         generate_csv(char, file=f)
+
 
 def count_cards():
     """
@@ -484,6 +536,7 @@ def count_cards():
     for count in counts:
         print(count)
 
+
 def count_relics():
     """
     Useful for printing out the least frequent relics, so we can clean up the data.
@@ -499,7 +552,7 @@ def count_relics():
     counts.sort()
     for count in counts:
         print(count)
-        
+
 
 if __name__ == "__main__":
     # generate_csvs(chars=["IRONCLAD"])
