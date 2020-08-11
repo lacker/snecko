@@ -9,7 +9,7 @@ import sys
 import tarfile
 import urllib
 
-from items import CARDS
+from cards import CARDS
 
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
 TMP = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
@@ -145,6 +145,14 @@ CampfireChoice.parser = xobj(CampfireChoice, {
     "key": xstr,
 })
 
+class RelicObtained(object):
+    def __init__(self):
+        pass
+RelicObtained.parser = xobj(RelicObtained, {
+    "floor": xint,
+    "key": xstr,
+})
+
 def upgrade(card):
     if "+" not in card:
         return card + "+1"
@@ -189,6 +197,7 @@ class GameLog(object):
                 "master_deck": xlist(xstr),
                 "neow_bonus": xstr,
                 "relics": xlist(xstr),
+                "relics_obtained": xlist(RelicObtained.parser),
             })
         
         string = bytestring.decode(encoding="utf-8", errors="replace")
@@ -221,6 +230,7 @@ class GameLog(object):
         for card in self.master_deck:
             if card not in CARDS:
                 return False
+        # XXX
         return self.ascension_level >= 17 
     
     def save(self):
@@ -249,14 +259,16 @@ class GameLog(object):
     def simulate(self):
         """
         Yields one tuple for each card choice.
-        (current floor, current decklist, picked cards, not picked cards).
+        (current floor, current decklist, current relics, picked cards, not picked cards).
+        This might be more convenient as a "game state" object.
         """
         # The types of action.
         # Upgrades are represented as an addition and removal for the same floor.
         # Order is important.
-        DECISION = 0
-        ADDITION = 1
-        REMOVAL = 2
+        ADD_RELIC = 0
+        CARD_CHOICE = 1
+        ADD_CARD = 2
+        REMOVE_CARD = 3
         
         # actions is a list of floor, type, data tuples.
         # For decision, data is a tuple of lists, (picked, not_picked).
@@ -268,64 +280,78 @@ class GameLog(object):
                 picked = []
             else:
                 picked = [choice.picked]
-            actions.append((choice.floor, DECISION, (picked, choice.not_picked)))
+            actions.append((choice.floor, CARD_CHOICE, (picked, choice.not_picked)))
 
             if choice.picked not in ["SKIP", "Singing Bowl"]:
-                actions.append((choice.floor, ADDITION, choice.picked))
+                actions.append((choice.floor, ADD_CARD, choice.picked))
 
         for choice in self.event_choices:
             if choice.event_name == "Liars Game" and choice.player_choice == "agreed":
-                actions.append((choice.floor, ADDITION, "Doubt"))
+                actions.append((choice.floor, ADD_CARD, "Doubt"))
             if choice.cards_removed:
                 for card in choice.cards_removed:
-                    actions.append((choice.floor, REMOVAL, card))
+                    actions.append((choice.floor, REMOVE_CARD, card))
             if choice.cards_transformed:
                 for card in choice.cards_transformed:
-                    actions.append((choice.floor, REMOVAL, card))
+                    actions.append((choice.floor, REMOVE_CARD, card))
             if choice.cards_obtained:
                 for card in choice.cards_obtained:
-                    actions.append((choice.floor, ADDITION, card))
+                    actions.append((choice.floor, ADD_CARD, card))
 
         for choice in self.campfire_choices:
             if choice.key == "SMITH":
-                actions.append((choice.floor, REMOVAL, choice.data))
-                actions.append((choice.floor, ADDITION, upgrade(choice.data)))
+                actions.append((choice.floor, REMOVE_CARD, choice.data))
+                actions.append((choice.floor, ADD_CARD, upgrade(choice.data)))
                 
         for floor, item in zip(self.item_purchase_floors, self.items_purchased):
             if item in CARDS:
-                actions.append((floor, ADDITION, item))
+                actions.append((floor, ADD_CARD, item))
         for floor, item in zip(self.items_purged_floors, self.items_purged):
             if item in CARDS:
-                actions.append((floor, REMOVAL, item))
+                actions.append((floor, REMOVE_CARD, item))
+
+        # Track the floor for any relic with a known floor
+        relicmap = {}
 
         for floor, choice in zip([17, 33, 50], self.boss_relics):
+            relicmap[choice.picked] = floor
             if choice.picked == "Calling Bell":
-                actions.append((floor, ADDITION, "CurseOfTheBell"))
+                actions.append((floor, ADD_CARD, "CurseOfTheBell"))
 
+        for obtained in self.relics_obtained:
+            relicmap[obtained.key] = obtained.floor
+
+        # Any relic with an unknown floor, we approximate with the floor of the last known relic
+        floor = 0
+        for relic in self.relics:
+            floor = relicmap.get(relic, floor)
+            actions.append((floor, ADD_RELIC, relic))
+                
         deck = self.initial_deck()
+        relics = []
         actions.sort()
         for floor, action_type, data in actions:
-            if action_type == DECISION:
+            if action_type == ADD_RELIC:
+                # XXX
+                # if data not in RELICS:
+                #     raise ValueError(f"bad relic: {data}")
+                relics.append(data)
+            elif action_type == CARD_CHOICE:
                 picked, not_picked = data
                 yield floor, deck, picked, not_picked
-            elif action_type == REMOVAL:
+            elif action_type == REMOVE_CARD:
                 if data not in deck:
                     continue
                 if data not in CARDS:
                     raise ValueError(f"cannot remove bad card: {data}")
                 deck.remove(data)
-            elif action_type == ADDITION:
+            elif action_type == ADD_CARD:
                 if data not in CARDS:
                     # This was probably a modded game. Just ditch
                     return
                 deck.append(data)
             else:
                 raise ValueError(f"unknown action_type: {action_type}")
-                
-        master = sorted(self.master_deck)
-        repro = sorted(deck)
-        # You can check if master==repro here to see how accurate the simulation was.
-        
     
     
 def iter_logs():
@@ -431,8 +457,8 @@ def character_filename(char):
         raise ValueError(f"unknown character: {char}")
     return os.path.join(TMP, char.lower() + ".csv")
 
-def generate_csvs():
-    for char in CHARACTERS:
+def generate_csvs(chars=CHARACTERS):
+    for char in chars:
         fname = character_filename(char)
         f = open(fname, "w")
         print(f"aggregating data for {fname}")
@@ -453,6 +479,30 @@ def count_cards():
     counts.sort()
     for count in counts:
         print(count)
+
+def count_relics():
+    """
+    Useful for printing out the least frequent relics, so we can clean up the data.
+    """
+    count = {}
+    for game in iter_local():
+        if not game.is_good():
+            continue
+        for relic in game.relics:
+            count[relic] = count.get(relic, 0) + 1
+
+    counts = [(value, key) for key, value in count.items()]
+    counts.sort()
+    for count in counts:
+        print(count)
         
 if __name__ == "__main__":
-    generate_csvs()
+    # generate_csvs(chars=["IRONCLAD"])
+    count = 0
+    for game in iter_local():
+        if game.character_chosen != "IRONCLAD":
+            continue
+        count += 1
+        if count >= 2:
+            game.show()
+            break
