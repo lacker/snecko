@@ -10,6 +10,7 @@ import tarfile
 import urllib
 
 from cards import CARDS
+from relics import RELICS
 
 CACHE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "cache")
 TMP = os.path.join(os.path.dirname(os.path.realpath(__file__)), "tmp")
@@ -369,13 +370,13 @@ class GameLog(object):
         actions.sort()
         for floor, action_type, data in actions:
             if action_type == ADD_RELIC:
-                # XXX
-                # if data not in RELICS:
-                #     raise ValueError(f"bad relic: {data}")
+                if data not in RELICS:
+                    # Probably modded
+                    return
                 relics.append(data)
             elif action_type == CARD_CHOICE:
                 picked, not_picked = data
-                yield floor, deck, picked, not_picked
+                yield floor, deck, relics, picked, not_picked
             elif action_type == REMOVE_CARD:
                 if data not in deck:
                     continue
@@ -384,7 +385,7 @@ class GameLog(object):
                 deck.remove(data)
             elif action_type == ADD_CARD:
                 if data not in CARDS:
-                    # This was probably a modded game. Just ditch
+                    # Probably modded
                     return
                 deck.append(data)
             else:
@@ -441,26 +442,39 @@ def save_good_games_locally():
 
 
 def csv_header(cards):
-    return "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked," + ",".join(cards)
+    return (
+        "Character,Floor,Deck Size,Choice1,Choice2,Choice3,Picked,"
+        + ",".join(cards)
+        + ",".join(relics)
+    )
 
 
-def validate_card_list(card_list):
+def validate_cards(card_list):
     for card in card_list:
         if card not in CARDS:
             raise ValueError(f"bad card: {card}")
 
 
-def mini_csv(character, floor, deck, choices):
+def mini_csv(character, floor, deck, relics, choices):
     """
     Returns a fake csv file with one row
     """
-    validate_card_list(deck)
-    validate_card_list(choices)
+    validate_cards(deck)
+    validate_relics(relics)
+    validate_cards(choices)
 
-    cards = sorted(list(CARDS))
+    all_cards = sorted(list(CARDS))
+    all_relics = sorted(list(RELICS))
     header = csv_header(cards)
-    deck_entries = [str(deck.count(card)) for card in cards]
-    line = [character, str(floor), str(len(deck))] + choices + ["skip"] + deck_entries
+    deck_entries = [str(deck.count(card)) for card in all_cards]
+    relic_entries = [str(relics.count(relic)) for relic in all_relics]
+    line = (
+        [character, str(floor), str(len(deck))]
+        + choices
+        + ["skip"]
+        + deck_entries
+        + relic_entries
+    )
     return io.StringIO(header + "\n" + ",".join(line) + "\n")
 
 
@@ -477,14 +491,15 @@ def generate_csv(character, file=sys.stdout):
     Picked - 1, 2, 3, or skip
     Hundreds of columns for cards, with a count of how many are in the deck
     """
-    cards = sorted(list(CARDS))
+    all_cards = sorted(list(CARDS))
+    all_relics = sorted(list(RELICS))
     header = csv_header(cards)
     print(header, file=file)
     games = 0
     for game in iter_local():
         if not game.is_good() or game.character_chosen != character:
             continue
-        for floor, deck, picked, not_picked in game.simulate():
+        for floor, deck, relics, picked, not_picked in game.simulate():
             choices = picked + not_picked
             if len(choices) != 3:
                 continue
@@ -493,12 +508,14 @@ def generate_csv(character, file=sys.stdout):
                 picked_value = str(choices.index(picked[0]) + 1)
             else:
                 picked_value = "skip"
-            deck_entries = [str(deck.count(card)) for card in cards]
+            deck_entries = [str(deck.count(card)) for card in all_cards]
+            relic_entries = [str(relics.count(relic)) for relic in all_relics]
             row = (
                 [game.character_chosen, str(floor), str(len(deck))]
                 + choices
                 + [picked_value]
                 + deck_entries
+                + relic_entries
             )
             print(",".join(row), file=file)
         games += 1
@@ -555,5 +572,4 @@ def count_relics():
 
 
 if __name__ == "__main__":
-    # generate_csvs(chars=["IRONCLAD"])
-    count_relics()
+    generate_csvs(chars=["IRONCLAD"])
