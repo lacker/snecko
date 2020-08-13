@@ -5,11 +5,17 @@ import sys
 
 DIR = os.path.dirname(__file__)
 
-if __name__ == "__main__":
+
+def log(message):
     logfile = os.path.join(DIR, "tmp", "mod.log")
-    log = open(logfile, "w")
-    print("ready to log stuff", file=log)
-    print("Ready")
+    log = open(logfile, "a+")
+    print(message, file=log)
+    log.close()
+
+
+if __name__ == "__main__":
+    log("mod.py running")
+    print("ready", flush=True)
     for line in sys.stdin:
-        print(f"received: {line}", file=log, flush=True)
+        log(f"received: {line}")
         print("WAIT 100")
