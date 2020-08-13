@@ -1,5 +1,5 @@
-# snecko
-Tools for analyzing Slay the Spire.
+# Snecko Brain
+Analyzing Slay the Spire, using machine learning.
 
 # setup
 
