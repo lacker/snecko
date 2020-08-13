@@ -1,7 +1,7 @@
 # Snecko Brain
 Analyzing Slay the Spire, using machine learning.
 
-# setup
+# Setting up the AI part
 
 ```bash
 # Install conda. I'll leave that to another guide, but I used Python 3.7 / 3.8 and miniconda.
@@ -20,3 +20,7 @@ jupyter notebook
 # In subsequent runs, instead of creating a new environment, reactivate your old one:
 conda activate snecko
 ```
+
+# Setting up the Slay The Spire mod
+
+Install mods...
