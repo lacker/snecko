@@ -144,7 +144,8 @@ if __name__ == "__main__":
             log(f"ValueError: {e}")
             continue
 
-        log(f"status: {status.dumps()}")
+        log(f"\nstatus: {status.dumps()}")
+        log(f"screen type: {status.game_state.screen_type}")
 
         # TODO: check if we need this
         print("WAIT 100")
