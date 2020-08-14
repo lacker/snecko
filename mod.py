@@ -16,11 +16,10 @@ class Status(object):
         pass
 
     @staticmethod
-    def parse(bytestring):
+    def parse(string):
         if not Status.parser:
             Status.parser = xobj(Status, {})
 
-        string = bytestring.decode(encoding="utf-8", errors="replace")
         data = json.loads(string)
         status = Status.parser(data)
         status.data = data
