@@ -9,10 +9,6 @@ import fastai
 import torch
 from fastai.tabular import *
 
-# A hack because when a Slay The Spire mod invokes this Python script, it doesn't have a nice pythonpath.
-DIR = os.path.dirname(__file__)
-sys.path.append(DIR)
-
 from xjson import *
 import logs
 
@@ -95,8 +91,23 @@ class GameState(object):
         """
         Returns a list of (card, probability) tuples
         """
-        cards = [card.log_name() for card in self.screen_state.cards]
-        return cards + ["Skip"]
+        deck = self.deck_for_prediction()
+        relics = self.relics_for_prediction()
+        choices = [card.log_name() for card in self.screen_state.cards]
+        testcsv = logs.mini_csv("IRONCLAD", self.floor, deck, relics, choices)
+        testf = pd.read_csv(testcsv)
+        prediction = learn.predict(testf.iloc[0])
+        print(prediction)
+        # TODO: figure out a nicer way to print this
+
+    def deck_for_prediction(self):
+        answer = [card.log_name() for card in self.deck]
+        if "AscendersBane" not in answer:
+            answer.append("AscendersBane")
+        return answer
+
+    def relics_for_prediction(self):
+        return [r.id for r in self.relics]
 
 
 GameState.parser = xobj(
@@ -169,8 +180,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length).decode()
-        parsed = json.loads(body)
-        print(json.dumps(parsed, indent=2))
+        status = Status.parse(body.strip())
+
+        if status.game_state is None:
+            print("status.game_state is None")
+        else:
+            if status.game_state.can_predict_card_choice():
+                print("predicting card choice...")
+                status.game_state.predict_card_choice()
+            else:
+                print(f"screen type: {status.game_state.screen_type}")
+
         self.send_response(200)
         self.end_headers()
         message = {"command": None}
@@ -178,37 +198,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    print(f"loading prediction model....")
+    Handler.learn = load_learner(logs.CACHE, "ironclad.learn")
     port = 7777
     httpd = HTTPServer(("", port), Handler)
     print(f"running brain on port {port}....")
     httpd.serve_forever()
-
-
-if False:
-    log("mod.py running")
-
-    # TODO: check if we need the flush
-    print("ready", flush=True)
-
-    for line in sys.stdin:
-        try:
-            status = Status.parse(line.strip())
-        except json.decoder.JSONDecodeError:
-            log(f"json decoding error with: {line}")
-            continue
-        except ValueError as e:
-            log(f"ValueError: {e}")
-            continue
-
-        log(f"\nstatus: {status.dumps()}")
-        if status.game_state is not None:
-            if status.game_state.can_predict_card_choice():
-                predictions = status.game_state.predict_card_choice()
-                log("predicting between:")
-                for p in predictions:
-                    log(p)
-            else:
-                log(f"screen type: {status.game_state.screen_type}")
-
-        # TODO: check if we need this
-        print("WAIT 100")
