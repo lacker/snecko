@@ -97,8 +97,8 @@ class GameState(object):
         testcsv = logs.mini_csv("IRONCLAD", self.floor, deck, relics, choices)
         testf = pd.read_csv(testcsv)
         prediction = learn.predict(testf.iloc[0])
-        print(prediction)
-        # TODO: figure out a nicer way to print this
+        values = list(prediction[2].numpy())
+        return zip(choices + "Skip", values)
 
     def deck_for_prediction(self):
         answer = [card.log_name() for card in self.deck]
@@ -187,7 +187,8 @@ class Handler(BaseHTTPRequestHandler):
         else:
             if status.game_state.can_predict_card_choice():
                 print("predicting card choice...")
-                status.game_state.predict_card_choice()
+                for card, value in status.game_state.predict_card_choice():
+                    print("{:5.3f} {}".format(value, card))
             else:
                 print(f"screen type: {status.game_state.screen_type}")
 
