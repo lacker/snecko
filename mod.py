@@ -15,6 +15,12 @@ class Card(object):
     def __init__(self):
         pass
 
+    def log_name(self):
+        if self.upgrades > 0:
+            return self.name + "+" + str(self.upgrades)
+        else:
+            return self.name
+
 
 Card.parser = xobj(
     Card,
@@ -57,17 +63,42 @@ Potion.parser = xobj(
 )
 
 
+class ScreenState(object):
+    def __init__(self):
+        pass
+
+
+ScreenState.parser = xobj(
+    ScreenState,
+    {"cards?": xlist(Card.parser), "bowl_available?": xbool, "skip_available?": xbool},
+)
+
+
 class GameState(object):
     def __init__(self):
         pass
+
+    def can_predict_card_choice(self):
+        if self.screen_type != "CARD_REWARD":
+            return False
+        if not self.screen_state.cards or len(self.screen_state.cards) != 3:
+            return False
+        return True
+
+    def predict_card_choice(self):
+        """
+        Returns a list of (card, probability) tuples
+        """
+        cards = [card.log_name() for card in self.screen_state.cards]
+        return cards + ["Skip"]
 
 
 GameState.parser = xobj(
     GameState,
     {
-        "choice_list": xlist(xstr),
+        "choice_list?": xlist(xstr),
         "screen_type": xstr,
-        "screen_state": xany,
+        "screen_state": ScreenState.parser,
         "seed": xint,
         "deck": xlist(Card.parser),
         "relics": xlist(Relic.parser),
@@ -105,7 +136,7 @@ class Status(object):
                     "available_commands": xlist(xstr),
                     "ready_for_command": xbool,
                     "in_game": xbool,
-                    "game_state": GameState.parser,
+                    "game_state?": GameState.parser,
                 },
             )
 
@@ -147,7 +178,14 @@ if __name__ == "__main__":
             continue
 
         log(f"\nstatus: {status.dumps()}")
-        log(f"screen type: {status.game_state.screen_type}")
+        if status.game_state is not None:
+            if status.game_state.can_predict_card_choice():
+                predictions = status.game_state.predict_card_choice()
+                log("predicting between:")
+                for p in predictions:
+                    log(p)
+            else:
+                log(f"screen type: {status.game_state.screen_type}")
 
         # TODO: check if we need this
         print("WAIT 100")
