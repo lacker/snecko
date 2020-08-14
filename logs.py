@@ -11,7 +11,7 @@ import urllib
 
 from cards import CARDS
 from relics import RELICS
-from parser import *
+from xjson import *
 
 ITEMS = CARDS.union(RELICS)
 

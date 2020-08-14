@@ -4,9 +4,11 @@ import json
 import os
 import sys
 
-from parser import *
-
+# A hack because when a Slay The Spire mod invokes this Python script, it doesn't have a nice pythonpath.
 DIR = os.path.dirname(__file__)
+sys.path.append(DIR)
+
+from xjson import *
 
 
 class Card(object):
