@@ -3,19 +3,13 @@
 import os
 import unittest
 
-import mod
+import brain
 
 DIR = os.path.dirname(__file__)
 
 
-class TestGameState(unittest.TestCase):
-    def test_parsing(self):
-        f = open(os.path.join(DIR, "test_state.json"))
+def test_parsing():
+    with open(os.path.join(DIR, "test_state.json")) as f:
         raw = f.read()
-        f.close()
-        status = mod.Status.parse(raw)
-        self.assertEqual(len(status.game_state.potions), 3)
-
-
-if __name__ == "__main__":
-    unittest.main()
+    status = brain.Status.parse(raw)
+    assert len(status.game_state.potions) == 3
