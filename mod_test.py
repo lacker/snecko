@@ -14,6 +14,7 @@ class TestGameState(unittest.TestCase):
         raw = f.read()
         f.close()
         status = mod.Status.parse(raw)
+        self.assertEqual(len(status.game_state.potions), 3)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,85 @@ from parser import *
 DIR = os.path.dirname(__file__)
 
 
+class Card(object):
+    def __init__(self):
+        pass
+
+
+Card.parser = xobj(
+    Card,
+    {
+        "exhausts": xbool,
+        "is_playable": xbool,
+        "cost": xint,
+        "name": xstr,
+        "id": xstr,
+        "type": xstr,
+        "upgrades": xint,
+        "rarity": xstr,
+        "has_target": xbool,
+    },
+)
+
+
+class Relic(object):
+    def __init__(self):
+        pass
+
+
+Relic.parser = xobj(Relic, {"name": xstr, "id": xstr, "counter": xint})
+
+
+class Potion(object):
+    def __init__(self):
+        pass
+
+
+Potion.parser = xobj(
+    Potion,
+    {
+        "requires_target": xbool,
+        "can_use": xbool,
+        "can_discard": xbool,
+        "name": xstr,
+        "id": xstr,
+    },
+)
+
+
+class GameState(object):
+    def __init__(self):
+        pass
+
+
+GameState.parser = xobj(
+    GameState,
+    {
+        "choice_list": xlist(xstr),
+        "screen_type": xstr,
+        "screen_state": xany,
+        "seed": xint,
+        "deck": xlist(Card.parser),
+        "relics": xlist(Relic.parser),
+        "max_hp": xint,
+        "act_boss": xstr,
+        "gold": xint,
+        "action_phase": xstr,
+        "act": xint,
+        "screen_name": xstr,
+        "room_phase": xstr,
+        "is_screen_up": xbool,
+        "potions": xlist(Potion.parser),
+        "current_hp": xint,
+        "floor": xint,
+        "ascension_level": xint,
+        "class": xstr,
+        "map": xany,
+        "room_type": xstr,
+    },
+)
+
+
 class Status(object):
     parser = None
 
@@ -18,7 +97,15 @@ class Status(object):
     @staticmethod
     def parse(string):
         if not Status.parser:
-            Status.parser = xobj(Status, {})
+            Status.parser = xobj(
+                Status,
+                {
+                    "available_commands": xlist(xstr),
+                    "ready_for_command": xbool,
+                    "in_game": xbool,
+                    "game_state": GameState.parser,
+                },
+            )
 
         data = json.loads(string)
         status = Status.parser(data)

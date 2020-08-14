@@ -2,6 +2,10 @@
 # Each of these x-functions returns a function that turns json into a typed output.
 
 
+def xany(data):
+    return data
+
+
 def xint(data):
     answer = int(data)
     if answer != data:
