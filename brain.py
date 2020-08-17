@@ -87,8 +87,9 @@ class GameState(object):
             return False
         return True
 
-    def predict_card_choice(self):
+    def predict_card_choice(self, learn):
         """
+        learn is an already-trained learning model. see the jupyter notebook for more info
         Returns a list of (card, probability) tuples
         """
         deck = self.deck_for_prediction()
@@ -187,7 +188,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             if status.game_state.can_predict_card_choice():
                 print("predicting card choice...")
-                for card, value in status.game_state.predict_card_choice():
+                for card, value in status.game_state.predict_card_choice(Handler.learn):
                     print("{:5.3f} {}".format(value, card))
             else:
                 print(f"screen type: {status.game_state.screen_type}")
