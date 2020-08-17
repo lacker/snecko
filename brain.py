@@ -99,7 +99,7 @@ class GameState(object):
         testf = pd.read_csv(testcsv)
         prediction = learn.predict(testf.iloc[0])
         values = list(prediction[2].numpy())
-        return zip(choices + "Skip", values)
+        return zip(choices + ["Skip"], values)
 
     def deck_for_prediction(self):
         answer = [card.log_name() for card in self.deck]
