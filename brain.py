@@ -190,6 +190,17 @@ class Status(object):
 
 
 class Handler(BaseHTTPRequestHandler):
+    @staticmethod
+    def load_learner(character):
+        if Handler.loaded == character:
+            return
+
+        fname = character.lower() + ".learn"
+        print(f"loading {fname} model...")
+        Handler.learn = load_learner(logs.CACHE, character.lower() + ".learn")
+        Handler.loaded = character
+        print("done loading")
+
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
@@ -204,11 +215,13 @@ class Handler(BaseHTTPRequestHandler):
         if game is None:
             print("status.game_state is None")
         elif game.can_predict_card_choice():
+            Handler.load_learner(game.class)
             print("predicting card choice...")
             choices = game.card_choices()
             for card, value in game.predict_choice(choices, Handler.learn):
                 print("{:5.3f} {}".format(value, card))
         elif game.can_predict_boss_relic_choice():
+            Handler.load_learner(game.class)
             print("predicting boss relic choice...")
             choices = game.relic_choices()
             for relic, value in game.predict_choice(choices, Handler.learn):
@@ -222,9 +235,9 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(message).encode())
 
 
+Handler.loaded = None
+
 if __name__ == "__main__":
-    print(f"loading prediction model....")
-    Handler.learn = load_learner(logs.CACHE, "ironclad.learn")
     port = 7777
     httpd = HTTPServer(("", port), Handler)
     print(f"running brain on port {port}....")
