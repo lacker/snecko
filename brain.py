@@ -28,7 +28,7 @@ Card.parser = xobj(
     Card,
     {
         "exhausts": xbool,
-        "is_playable": xbool,
+        "is_playable?": xbool,
         "cost": xint,
         "name": xstr,
         "id": xstr,
@@ -72,7 +72,12 @@ class ScreenState(object):
 
 ScreenState.parser = xobj(
     ScreenState,
-    {"cards?": xlist(Card.parser), "bowl_available?": xbool, "skip_available?": xbool},
+    {
+        "cards?": xlist(Card.parser),
+        "bowl_available?": xbool,
+        "skip_available?": xbool,
+        "relics?": xlist(Relic.parser),
+    },
 )
 
 
@@ -87,19 +92,31 @@ class GameState(object):
             return False
         return True
 
-    def predict_card_choice(self, learn):
+    def card_choices(self):
+        return [card.log_name() for card in self.screen_state.cards]
+
+    def relic_choices(self):
+        return [relic.id for relic in self.screen_state.relics]
+
+    def predict_choice(self, choices, learn):
         """
         learn is an already-trained learning model. see the jupyter notebook for more info
         Returns a list of (card, probability) tuples
         """
         deck = self.deck_for_prediction()
         relics = self.relics_for_prediction()
-        choices = [card.log_name() for card in self.screen_state.cards]
         testcsv = logs.mini_csv("IRONCLAD", self.floor, deck, relics, choices)
         testf = pd.read_csv(testcsv)
         prediction = learn.predict(testf.iloc[0])
         values = list(prediction[2].numpy())
         return zip(choices + ["Skip"], values)
+
+    def can_predict_boss_relic_choice(self):
+        if self.screen_type != "BOSS_REWARD":
+            return False
+        if not self.screen_state.relics or len(self.screen_state.relics) != 3:
+            return False
+        return True
 
     def deck_for_prediction(self):
         answer = [card.log_name() for card in self.deck]
@@ -182,16 +199,22 @@ class Handler(BaseHTTPRequestHandler):
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length).decode()
         status = Status.parse(body.strip())
+        game = status.game_state
 
-        if status.game_state is None:
+        if game is None:
             print("status.game_state is None")
+        elif game.can_predict_card_choice():
+            print("predicting card choice...")
+            choices = game.card_choices()
+            for card, value in game.predict_choice(choices, Handler.learn):
+                print("{:5.3f} {}".format(value, card))
+        elif game.can_predict_boss_relic_choice():
+            print("predicting boss relic choice...")
+            choices = game.relic_choices()
+            for relic, value in game.predict_choice(choices, Handler.learn):
+                print("{:5.3f} {}".format(value, relic))
         else:
-            if status.game_state.can_predict_card_choice():
-                print("predicting card choice...")
-                for card, value in status.game_state.predict_card_choice(Handler.learn):
-                    print("{:5.3f} {}".format(value, card))
-            else:
-                print(f"screen type: {status.game_state.screen_type}")
+            print(f"screen type: {game.screen_type}")
 
         self.send_response(200)
         self.end_headers()
