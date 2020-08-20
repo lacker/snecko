@@ -215,13 +215,13 @@ class Handler(BaseHTTPRequestHandler):
         if game is None:
             print("status.game_state is None")
         elif game.can_predict_card_choice():
-            Handler.load_learner(game.class)
+            Handler.load_learner(game._class)
             print("predicting card choice...")
             choices = game.card_choices()
             for card, value in game.predict_choice(choices, Handler.learn):
                 print("{:5.3f} {}".format(value, card))
         elif game.can_predict_boss_relic_choice():
-            Handler.load_learner(game.class)
+            Handler.load_learner(game._class)
             print("predicting boss relic choice...")
             choices = game.relic_choices()
             for relic, value in game.predict_choice(choices, Handler.learn):
