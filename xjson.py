@@ -56,6 +56,9 @@ def xobj(cls, subparsers):
                     continue
                 raise ValueError(f"expected key {key} but data is {data}")
             value = subparser(data.get(key))
+            # Hack for reserved words
+            if key == "class":
+                key = "_class"
             answer.__setattr__(key, value)
         return answer
 
