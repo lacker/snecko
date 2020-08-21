@@ -6,11 +6,11 @@ import os
 import sys
 
 import fastai
-import torch
-from fastai.tabular import *
+from fastai.tabular import pd
 
 from xjson import *
 import logs
+from model import Model
 
 
 class Card(object):
@@ -98,20 +98,26 @@ class GameState(object):
     def relic_choices(self):
         return [relic.id for relic in self.screen_state.relics]
 
-    def predict_choice(self, choices, learn):
+    def predict_choice(self, choices):
         """
         learn is an already-trained learning model. see the jupyter notebook for more info
         Returns a list of (card, probability) tuples
         """
         deck = self.deck_for_prediction()
         relics = self.relics_for_prediction()
-        testcsv = logs.mini_csv("IRONCLAD", self.floor, deck, relics, choices)
+        testcsv = logs.mini_csv(self._class.upper(), self.floor, deck, relics, choices)
         testf = pd.read_csv(testcsv)
-        prediction = learn.predict(testf.iloc[0])
-        values = list(prediction[2].numpy())
+        model = Model(self._class)
+        values = model.predict_iloc(testf.iloc[0])
         return zip(choices + ["Skip"], values)
 
-    def can_predict_boss_relic_choice(self):
+    def predict_card_choice(self):
+        return self.predict_choice(self.card_choices())
+
+    def predict_relic_choice(self):
+        return self.predict_choice(self.relic_choices())
+
+    def can_predict_relic_choice(self):
         if self.screen_type != "BOSS_REWARD":
             return False
         if not self.screen_state.relics or len(self.screen_state.relics) != 3:
@@ -190,17 +196,6 @@ class Status(object):
 
 
 class Handler(BaseHTTPRequestHandler):
-    @staticmethod
-    def load_learner(character):
-        if Handler.loaded == character:
-            return
-
-        fname = character.lower() + ".learn"
-        print(f"loading {fname} model...")
-        Handler.learn = load_learner(logs.CACHE, character.lower() + ".learn")
-        Handler.loaded = character
-        print("done loading")
-
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
@@ -215,16 +210,12 @@ class Handler(BaseHTTPRequestHandler):
         if game is None:
             print("status.game_state is None")
         elif game.can_predict_card_choice():
-            Handler.load_learner(game._class)
             print("predicting card choice...")
-            choices = game.card_choices()
-            for card, value in game.predict_choice(choices, Handler.learn):
+            for card, value in game.predict_card_choice():
                 print("{:5.3f} {}".format(value, card))
-        elif game.can_predict_boss_relic_choice():
-            Handler.load_learner(game._class)
-            print("predicting boss relic choice...")
-            choices = game.relic_choices()
-            for relic, value in game.predict_choice(choices, Handler.learn):
+        elif game.can_predict_relic_choice():
+            print("predicting relic choice...")
+            for relic, value in game.predict_relic_choice():
                 print("{:5.3f} {}".format(value, relic))
         else:
             print(f"screen type: {game.screen_type}")
@@ -234,8 +225,6 @@ class Handler(BaseHTTPRequestHandler):
         message = {"command": None}
         self.wfile.write(json.dumps(message).encode())
 
-
-Handler.loaded = None
 
 if __name__ == "__main__":
     port = 7777
