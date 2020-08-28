@@ -158,9 +158,6 @@ class GameLog(object):
     def __init__(self):
         pass
 
-    def ascension(self):
-        return self.data.get("ascension_level", 0)
-
     def is_high_level(self):
         return self.ascension_level >= 17
 
@@ -577,4 +574,4 @@ def show_json(n):
 
 
 if __name__ == "__main__":
-    generate_csvs()
+    show_json(100)
