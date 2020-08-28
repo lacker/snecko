@@ -261,8 +261,9 @@ class GameLog(object):
 
     def simulate(self):
         """
-        Yields one tuple for each card choice.
+        Yields one tuple for each card/relic choice.
         (current floor, current decklist, current relics, picked-list, not-picked-list).
+
         This might be more convenient as a "game state" object.
         """
         # The types of action.

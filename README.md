@@ -13,10 +13,6 @@ conda activate snecko
 conda install -c pytorch -c fastai fastai
 conda install -c conda-forge jupyterlab
 conda install -c conda-forge notebook
-conda install -c pytest
-
-# Run unit tests
-pytest .
 
 # Run jupyter, then open scratch.ipynb
 jupyter notebook
