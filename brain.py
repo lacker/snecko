@@ -191,6 +191,9 @@ class Status(object):
             pass
         return status
 
+    def can_play(self):
+        return "play" in self.available_commands
+
     def dumps(self):
         return json.dumps(self.data, indent=2)
 
@@ -219,6 +222,8 @@ class Handler(BaseHTTPRequestHandler):
                 print("{:5.3f} {}".format(value, relic))
         else:
             print(f"screen type: {game.screen_type}")
+            if status.can_play():
+                print(status.dumps())
 
         self.send_response(200)
         self.end_headers()
