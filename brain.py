@@ -81,6 +81,27 @@ ScreenState.parser = xobj(
 )
 
 
+class CombatState(object):
+    def __init__(self):
+        pass
+
+
+CombatState.parser = xobj(
+    CombatState,
+    {
+        "draw_pile": xlist(Card.parser),
+        "discard_pile": xlist(Card.parser),
+        "exhaust_pile": xlist(Card.parser),
+        "cards_discarded_this_turn": xint,
+        "monsters": xlist(xany),
+        "limbo": xany,
+        "turn": xint,
+        "hand": xlist(Card.parser),
+        "player": xany,
+    },
+)
+
+
 class CurrentGameState(object):
     def __init__(self):
         pass
@@ -140,6 +161,7 @@ CurrentGameState.parser = xobj(
         "choice_list?": xlist(xstr),
         "screen_type": xstr,
         "screen_state": ScreenState.parser,
+        "combat_state": CombatState.parser,
         "seed": xint,
         "deck": xlist(Card.parser),
         "relics": xlist(Relic.parser),
