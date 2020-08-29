@@ -161,7 +161,7 @@ CurrentGameState.parser = xobj(
         "choice_list?": xlist(xstr),
         "screen_type": xstr,
         "screen_state": ScreenState.parser,
-        "combat_state": CombatState.parser,
+        "combat_state?": CombatState.parser,
         "seed": xint,
         "deck": xlist(Card.parser),
         "relics": xlist(Relic.parser),
