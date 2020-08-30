@@ -85,6 +85,24 @@ class CombatState(object):
     def __init__(self):
         pass
 
+    def possible_plays(self):
+        """
+        Returns a list of (card index, target index) tuples.
+        Card index is 1-indexed for compatibility with communication mod.
+        Target index is None if this card doesn't target.
+        """
+        answer = []
+        for zero_indexed_card_index, card in enumerate(self.hand):
+            card_index = zero_indexed_card_index + 1
+            if not card.is_playable:
+                continue
+            if card.has_target:
+                for target_index in range(self.monsters):
+                    answer.append((card_index, target_index))
+            else:
+                answer.append((card_index, None))
+        return answer
+
 
 CombatState.parser = xobj(
     CombatState,
