@@ -202,7 +202,11 @@ CurrentGameState.parser = xobj(
 )
 
 
-def make_play()
+def make_play(card_index, target_index):
+    if target_index is None:
+        return f"PLAY {card_index}"
+    return f"PLAY {card_index} {target_index}"
+
 
 class Status(object):
     parser = None
@@ -256,7 +260,10 @@ class Handler(BaseHTTPRequestHandler):
         if game is None:
             print("status.game_state is None")
         elif status.can_play():
-            plays = [make_play(card_index, target_index) for play in game.combat_state.possible_plays()]
+            plays = [
+                make_play(card_index, target_index)
+                for play in game.combat_state.possible_plays()
+            ]
             print("choices:")
             for play in plays:
                 print(play)
