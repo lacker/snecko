@@ -22,6 +22,7 @@ def xstr(data):
 def xbool(data):
     if type(data) != bool:
         raise ValueError(f"expected bool but got {data}")
+    return data
 
 
 # Subparser is a function that takes the data and returns the value for a subtype
@@ -45,6 +46,7 @@ def xobj(cls, subparsers):
         if type(data) != dict:
             raise ValueError(f"expected dict but got {data}")
         answer = cls()
+        answer._data = data
         for key, subparser in subparsers.items():
             optional = False
             if key.endswith("?"):

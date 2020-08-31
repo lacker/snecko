@@ -98,7 +98,7 @@ class CombatState(object):
             if not card.is_playable:
                 continue
             if card.has_target:
-                for target_index in range(self.monsters):
+                for target_index in range(len(self.monsters)):
                     answer.append((card_index, target_index))
             else:
                 answer.append((card_index, None))
@@ -203,7 +203,7 @@ CurrentGameState.parser = xobj(
 )
 
 
-def make_play(card_index, target_index):
+def play_command(card_index, target_index):
     if target_index is None:
         return f"PLAY {card_index}"
     return f"PLAY {card_index} {target_index}"
@@ -260,16 +260,25 @@ class Handler(BaseHTTPRequestHandler):
 
         if game is None:
             print("status.game_state is None")
+        elif game.screen_name == "SETTINGS":
+            print("in settings screen")
         elif status.can_play():
-            plays = [
-                make_play(card_index, target_index)
-                for play in game.combat_state.possible_plays()
+            plays = game.combat_state.possible_plays()
+            print("XXX", plays)
+            commands = [
+                play_command(card_index, target_index)
+                for card_index, target_index in plays
             ]
-            print("choices:")
-            for play in plays:
-                print(play)
-            command = random.choice(plays)
-            print("choosing:", command)
+
+            if commands:
+                print("choices:")
+                for command in commands:
+                    print(command)
+                command = random.choice(commands)
+                print("choosing:", command)
+            else:
+                # print(status.dumps())
+                print("no plays")
         elif game.can_predict_card_choice():
             print("predicting card choice...")
             for card, value in game.predict_card_choice():
