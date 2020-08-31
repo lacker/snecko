@@ -21,8 +21,8 @@ if __name__ == "__main__":
             response = json.loads(r.content.decode())
             if response["command"]:
                 log("sending command: '" + response["command"] + "'")
-                print(response["command"])
+                print(response["command"], flush=True)
         except:
             err = str(sys.exc_info()[0])
             log("error: " + err)
-            print(err, file=sys.stderr)
+            print(err, file=sys.stderr, flush=True)

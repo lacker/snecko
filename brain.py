@@ -82,6 +82,14 @@ ScreenState.parser = xobj(
 )
 
 
+class Monster(object):
+    def __init__(self):
+        pass
+
+
+Monster.parser = xobj(Monster, {"is_gone": xbool})
+
+
 class CombatState(object):
     def __init__(self):
         pass
@@ -98,8 +106,9 @@ class CombatState(object):
             if not card.is_playable:
                 continue
             if card.has_target:
-                for target_index in range(len(self.monsters)):
-                    answer.append((card_index, target_index))
+                for target_index, monster in enumerate(self.monsters):
+                    if not monster.is_gone:
+                        answer.append((card_index, target_index))
             else:
                 answer.append((card_index, None))
         return answer
@@ -112,7 +121,7 @@ CombatState.parser = xobj(
         "discard_pile": xlist(Card.parser),
         "exhaust_pile": xlist(Card.parser),
         "cards_discarded_this_turn": xint,
-        "monsters": xlist(xany),
+        "monsters": xlist(Monster.parser),
         "limbo": xany,
         "turn": xint,
         "hand": xlist(Card.parser),
@@ -263,8 +272,8 @@ class Handler(BaseHTTPRequestHandler):
         elif game.screen_name == "SETTINGS":
             print("in settings screen")
         elif status.can_play():
+            # print(status.dumps())
             plays = game.combat_state.possible_plays()
-            print("XXX", plays)
             commands = [
                 play_command(card_index, target_index)
                 for card_index, target_index in plays
@@ -277,7 +286,6 @@ class Handler(BaseHTTPRequestHandler):
                 command = random.choice(commands)
                 print("choosing:", command)
             else:
-                # print(status.dumps())
                 print("no plays")
         elif game.can_predict_card_choice():
             print("predicting card choice...")
