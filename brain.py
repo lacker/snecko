@@ -271,9 +271,8 @@ class Handler(BaseHTTPRequestHandler):
             for relic, value in game.predict_relic_choice():
                 print("{:5.3f} {}".format(value, relic))
         else:
-            print(f"screen type: {game.screen_type}")
-            if status.can_play():
-                print(status.dumps())
+            print(status.dumps())
+            print("don't know what to do")
 
         self.send_response(200)
         self.end_headers()
