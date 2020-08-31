@@ -202,6 +202,8 @@ CurrentGameState.parser = xobj(
 )
 
 
+def make_play()
+
 class Status(object):
     parser = None
 
@@ -249,9 +251,17 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(content_length).decode()
         status = Status.parse(body.strip())
         game = status.game_state
+        command = None
 
         if game is None:
             print("status.game_state is None")
+        elif status.can_play():
+            plays = [make_play(card_index, target_index) for play in game.combat_state.possible_plays()]
+            print("choices:")
+            for play in plays:
+                print(play)
+            command = random.choice(plays)
+            print("choosing:", command)
         elif game.can_predict_card_choice():
             print("predicting card choice...")
             for card, value in game.predict_card_choice():
@@ -267,7 +277,7 @@ class Handler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.end_headers()
-        message = {"command": None}
+        message = {"command": command}
         self.wfile.write(json.dumps(message).encode())
 
 
