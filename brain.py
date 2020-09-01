@@ -250,6 +250,34 @@ class Status(object):
     def can_play(self):
         return "play" in self.available_commands
 
+    def has_commands(self):
+        """
+        Whether we can generate a list of possible commands from this state.
+        """
+        if self.can_play():
+            return True
+        if self.game_state.choice_list:
+            return True
+
+    def get_commands(self):
+        """
+        Returns a list of possible commands.
+        """
+        if self.can_play():
+            plays = self.game_state.combat_state.possible_plays()
+            commands = [
+                play_command(card_index, target_index)
+                for card_index, target_index in plays
+            ]
+            commands += ["END"]
+            return commands
+
+        if self.game_state.choice_list:
+            return [f"CHOOSE {choice}" for choice in self.game_state.choice_list]
+
+        # We don't know what to do.
+        return []
+
     def dumps(self):
         return json.dumps(self.data, indent=2)
 
@@ -271,22 +299,6 @@ class Handler(BaseHTTPRequestHandler):
             print("status.game_state is None")
         elif game.screen_name == "SETTINGS":
             print("in settings screen")
-        elif status.can_play():
-            # print(status.dumps())
-            plays = game.combat_state.possible_plays()
-            commands = [
-                play_command(card_index, target_index)
-                for card_index, target_index in plays
-            ]
-
-            if commands:
-                print("choices:")
-                for command in commands:
-                    print(command)
-                command = random.choice(commands)
-                print("choosing:", command)
-            else:
-                print("no plays")
         elif game.can_predict_card_choice():
             print("predicting card choice...")
             for card, value in game.predict_card_choice():
@@ -295,6 +307,13 @@ class Handler(BaseHTTPRequestHandler):
             print("predicting relic choice...")
             for relic, value in game.predict_relic_choice():
                 print("{:5.3f} {}".format(value, relic))
+        elif status.has_commands():
+            commands = status.get_commands()
+            print("possibilities:")
+            for c in commands:
+                print(c)
+            command = random.choice(commands)
+            print("command:", command)
         else:
             print(status.dumps())
             print("don't know what to do")
