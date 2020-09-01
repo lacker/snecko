@@ -14,6 +14,13 @@ import logs
 from model import Model
 
 
+LOG = open(os.path.expanduser("~/brain.log"), "a+")
+
+
+def log(message):
+    LOG.write(message + "\n")
+
+
 class Card(object):
     def __init__(self):
         pass
@@ -323,8 +330,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
-        body = self.rfile.read(content_length).decode()
-        status = Status.parse(body.strip())
+        body = self.rfile.read(content_length).decode().strip()
+        log(body)
+        status = Status.parse(body)
         game = status.game_state
         command = None
 
