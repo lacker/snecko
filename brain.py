@@ -247,36 +247,62 @@ class Status(object):
             pass
         return status
 
+    def can_proceed(self):
+        return "proceed" in self.available_commands
+
     def can_play(self):
         return "play" in self.available_commands
+
+    def can_choose(self):
+        return "choose" in self.available_commands
+
+    def can_end(self):
+        return "end" in self.available_commands
+
+    def can_confirm(self):
+        return "confirm" in self.available_commands
 
     def has_commands(self):
         """
         Whether we can generate a list of possible commands from this state.
         """
-        if self.can_play():
-            return True
-        if self.game_state.choice_list:
-            return True
+        return any(
+            [
+                self.can_proceed(),
+                self.can_play(),
+                self.can_choose(),
+                self.can_end(),
+                self.can_confirm(),
+            ]
+        )
 
     def get_commands(self):
         """
         Returns a list of possible commands.
         """
+        commands = []
+
         if self.can_play():
             plays = self.game_state.combat_state.possible_plays()
-            commands = [
+            commands += [
                 play_command(card_index, target_index)
                 for card_index, target_index in plays
             ]
-            commands += ["END"]
-            return commands
 
-        if self.game_state.choice_list:
-            return [f"CHOOSE {choice}" for choice in self.game_state.choice_list]
+        if self.can_end():
+            commands.append("END")
 
-        # We don't know what to do.
-        return []
+        if self.can_choose():
+            for choice in self.game_state.choice_list:
+                commands.append(f"CHOOSE {choice}")
+
+        if self.can_proceed():
+            commands.append("PROCEED")
+
+        if self.can_confirm():
+            commands.append("CONFIRM")
+
+        return commands
 
     def dumps(self):
         return json.dumps(self.data, indent=2)
