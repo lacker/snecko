@@ -273,6 +273,7 @@ class Status(object):
                 self.can_choose(),
                 self.can_end(),
                 self.can_confirm(),
+                self.can_leave(),
             ]
         )
 
@@ -302,6 +303,9 @@ class Status(object):
         if self.can_confirm():
             commands.append("CONFIRM")
 
+        if self.can_leave():
+            commands.append("LEAVE")
+
         return commands
 
     def dumps(self):
@@ -321,18 +325,23 @@ class Handler(BaseHTTPRequestHandler):
         game = status.game_state
         command = None
 
+        # Would be nice to have "prediction mode"
+        if False:
+            if game.can_predict_card_choice():
+                print("predicting card choice...")
+                for card, value in game.predict_card_choice():
+                    print("{:5.3f} {}".format(value, card))
+            elif game.can_predict_relic_choice():
+                print("predicting relic choice...")
+                for relic, value in game.predict_relic_choice():
+                    print("{:5.3f} {}".format(value, relic))
+
         if game is None:
-            print("status.game_state is None")
+            print("let's start a new run")
+            command = "START IRONCLAD"
         elif game.screen_name == "SETTINGS":
             print("in settings screen")
-        elif game.can_predict_card_choice():
-            print("predicting card choice...")
-            for card, value in game.predict_card_choice():
-                print("{:5.3f} {}".format(value, card))
-        elif game.can_predict_relic_choice():
-            print("predicting relic choice...")
-            for relic, value in game.predict_relic_choice():
-                print("{:5.3f} {}".format(value, relic))
+
         elif status.has_commands():
             commands = status.get_commands()
             print("possibilities:")
