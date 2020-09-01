@@ -262,6 +262,9 @@ class Status(object):
     def can_confirm(self):
         return "confirm" in self.available_commands
 
+    def can_leave(self):
+        return "leave" in self.available_commands
+
     def has_commands(self):
         """
         Whether we can generate a list of possible commands from this state.
