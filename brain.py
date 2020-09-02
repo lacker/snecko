@@ -304,8 +304,14 @@ class Status(object):
             commands.append("END")
 
         if self.can_choose():
+            potions_full = all(
+                [potion.can_discard for potion in self.game_state.potions]
+            )
             for choice in self.game_state.choice_list:
-                commands.append(f"CHOOSE {choice}")
+                if choice == "potion" and potions_full:
+                    pass
+                else:
+                    commands.append(f"CHOOSE {choice}")
 
         if self.can_proceed():
             commands.append("PROCEED")
