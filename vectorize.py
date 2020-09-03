@@ -69,4 +69,20 @@ class VBool(object):
         return 1
 
 
-# TODO: implement VObj
+class VObj(object):
+    def __init__(self, sublist):
+        """
+        sublist is a list of (keyname, subvectorizer) tuples
+        """
+        self.sublist = sublist
+        self.size = sum(len(subv) for _, subv in self.sublist)
+
+    def vectorize(self, data):
+        answer = []
+        for key, subv in self.sublist:
+            attr = data.__getattr__(key)
+            answer.extend(subv.vectorize(attr))
+        return answer
+
+    def __len__(self):
+        return self.size
