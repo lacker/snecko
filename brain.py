@@ -137,7 +137,7 @@ CombatState.parser = xobj(
 )
 
 
-class CurrentGameState(object):
+class GameState(object):
     def __init__(self):
         pass
 
@@ -190,8 +190,8 @@ class CurrentGameState(object):
         return [r.id for r in self.relics]
 
 
-CurrentGameState.parser = xobj(
-    CurrentGameState,
+GameState.parser = xobj(
+    GameState,
     {
         "choice_list?": xlist(xstr),
         "screen_type": xstr,
@@ -240,7 +240,7 @@ class Status(object):
                     "available_commands": xlist(xstr),
                     "ready_for_command": xbool,
                     "in_game": xbool,
-                    "game_state?": CurrentGameState.parser,
+                    "game_state?": GameState.parser,
                 },
             )
 
