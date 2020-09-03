@@ -17,7 +17,7 @@ class VInt(object):
         return self.size
 
 
-class VChar(object):
+class VCharImpl(object):
     def __init__(self):
         self.subv = VInt(size=7)
 
@@ -29,6 +29,9 @@ class VChar(object):
         return len(self.subv)
 
 
+VChar = VCharImpl()
+
+
 class VList(object):
     def __init__(self, subv, size=8):
         self.size = size
@@ -36,7 +39,8 @@ class VList(object):
 
     def vectorize(self, data):
         answer = []
-        prefix = data[: self.size]
+        if not data:
+            data = []
         for item in data[: self.size]:
             answer.extend(self.subv.vectorize(item))
 
@@ -51,11 +55,10 @@ class VList(object):
 
 
 def VStr(size=8):
-    subv = VChar()
-    return VList(subv, size=size)
+    return VList(VChar, size=size)
 
 
-class VBool(object):
+class VBoolImpl(object):
     def __init__(self):
         pass
 
@@ -69,19 +72,31 @@ class VBool(object):
         return 1
 
 
+VBool = VBoolImpl()
+
+
 class VObj(object):
     def __init__(self, sublist):
         """
         sublist is a list of (keyname, subvectorizer) tuples
         """
+        if type(sublist) == dict:
+            sublist = list(sublist.items())
+            sublist.sort()
         self.sublist = sublist
+        for key, _ in self.sublist:
+            if "?" in key:
+                raise ValueError(f"bad VObj key: {key}")
         self.size = sum(len(subv) for _, subv in self.sublist)
 
     def vectorize(self, data):
         answer = []
         for key, subv in self.sublist:
-            attr = data.__getattr__(key)
-            answer.extend(subv.vectorize(attr))
+            if data.__hasattr__(key):
+                attr = data.__getattr__(key)
+                answer.extend(subv.vectorize(attr))
+            else:
+                answer.extend([0] * len(subv))
         return answer
 
     def __len__(self):
