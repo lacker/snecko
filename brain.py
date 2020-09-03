@@ -6,13 +6,9 @@ import random
 import os
 import sys
 
-import fastai
-from fastai.tabular import pd
-
 from vectorize import *
 from xjson import *
 import logs
-from model import Model
 
 MAX_CHOICES = 15
 LOG = open(os.path.expanduser("~/brain.log"), "a+")
@@ -156,7 +152,7 @@ Monster.vectorizer = VObj(
         "half_dead": VBool,
         "id": VStr(),
         "intent": VStr(),
-        "is_gone": VBool(),
+        "is_gone": VBool,
         "max_hp": VInt(),
         "move_adjusted_damage": VInt(),
         "move_base_damage": VInt(),
@@ -234,7 +230,7 @@ CombatState.vectorizer = VObj(
         "hand": VList(Card.vectorizer, size=10),
         "monsters": VList(Monster.vectorizer, size=5),
         "player": PlayerState.vectorizer,
-        "turn": VInt,
+        "turn": VInt(),
     }
 )
 
@@ -242,54 +238,6 @@ CombatState.vectorizer = VObj(
 class GameState(object):
     def __init__(self):
         pass
-
-    def can_predict_card_choice(self):
-        if self.screen_type != "CARD_REWARD":
-            return False
-        if not self.screen_state.cards or len(self.screen_state.cards) != 3:
-            return False
-        return True
-
-    def card_choices(self):
-        return [card.log_name() for card in self.screen_state.cards]
-
-    def relic_choices(self):
-        return [relic.id for relic in self.screen_state.relics]
-
-    def predict_choice(self, choices):
-        """
-        learn is an already-trained learning model. see the jupyter notebook for more info
-        Returns a list of (card, probability) tuples
-        """
-        deck = self.deck_for_prediction()
-        relics = self.relics_for_prediction()
-        testcsv = logs.mini_csv(self._class.upper(), self.floor, deck, relics, choices)
-        testf = pd.read_csv(testcsv)
-        model = Model(self._class)
-        values = model.predict_iloc(testf.iloc[0])
-        return zip(choices + ["Skip"], values)
-
-    def predict_card_choice(self):
-        return self.predict_choice(self.card_choices())
-
-    def predict_relic_choice(self):
-        return self.predict_choice(self.relic_choices())
-
-    def can_predict_relic_choice(self):
-        if self.screen_type != "BOSS_REWARD":
-            return False
-        if not self.screen_state.relics or len(self.screen_state.relics) != 3:
-            return False
-        return True
-
-    def deck_for_prediction(self):
-        answer = [card.log_name() for card in self.deck]
-        if "AscendersBane" not in answer:
-            answer.append("AscendersBane")
-        return answer
-
-    def relics_for_prediction(self):
-        return [r.id for r in self.relics]
 
 
 GameState.parser = xobj(
@@ -328,7 +276,7 @@ GameState.vectorizer = VObj(
         "ascension_level": VInt(size=5),
         "choice_list": VList(VStr(), size=MAX_CHOICES),
         "class": VStr(),
-        "combat_state": CombatState.parser,
+        "combat_state": CombatState.vectorizer,
         "current_hp": VInt(),
         "deck": VList(Card.vectorizer, size=40),
         "floor": VInt(),
@@ -468,17 +416,6 @@ class Handler(BaseHTTPRequestHandler):
         status = Status.parse(body)
         game = status.game_state
         command = None
-
-        # Would be nice to have "prediction mode"
-        if False:
-            if game.can_predict_card_choice():
-                print("predicting card choice...")
-                for card, value in game.predict_card_choice():
-                    print("{:5.3f} {}".format(value, card))
-            elif game.can_predict_relic_choice():
-                print("predicting relic choice...")
-                for relic, value in game.predict_relic_choice():
-                    print("{:5.3f} {}".format(value, relic))
 
         if game is None:
             print("let's start a new run")

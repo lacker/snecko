@@ -84,10 +84,14 @@ class VObj(object):
             sublist = list(sublist.items())
             sublist.sort()
         self.sublist = sublist
-        for key, _ in self.sublist:
+        self.size = 0
+        for key, subv in self.sublist:
             if "?" in key:
                 raise ValueError(f"bad VObj key: {key}")
-        self.size = sum(len(subv) for _, subv in self.sublist)
+            try:
+                self.size += len(subv)
+            except TypeError:
+                raise ValueError(f"bad vectorizer type for key: {key}")
 
     def vectorize(self, data):
         answer = []
