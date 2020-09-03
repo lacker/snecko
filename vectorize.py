@@ -1,14 +1,15 @@
 # Tools for turning objects into bit vectors.
+from typing import List
 
 
 class VInt(object):
     def __init__(self, size=8):
         self.size = size
 
-    def vectorize(self, data):
+    def vectorize(self, data) -> List[int]:
         answer = []
-        while len(answer) < size:
-            answer.push(data % 2)
+        while len(answer) < self.size:
+            answer.append(data % 2)
             data = data // 2
         answer.reverse()
         return answer
@@ -21,7 +22,7 @@ class VCharImpl(object):
     def __init__(self):
         self.subv = VInt(size=7)
 
-    def vectorize(self, data):
+    def vectorize(self, data) -> List[int]:
         n = ord(data)
         return self.subv.vectorize(n)
 
@@ -37,7 +38,7 @@ class VList(object):
         self.size = size
         self.subv = subv
 
-    def vectorize(self, data):
+    def vectorize(self, data) -> List[int]:
         answer = []
         if not data:
             data = []
@@ -46,9 +47,9 @@ class VList(object):
 
         # Pad with zeros
         while len(answer) < len(self):
-            answer.push(0)
+            answer.append(0)
 
-        return 0
+        return answer
 
     def __len__(self):
         return self.size * len(self.subv)
@@ -62,7 +63,7 @@ class VBoolImpl(object):
     def __init__(self):
         pass
 
-    def vectorize(self, data):
+    def vectorize(self, data) -> List[int]:
         if data:
             return [1]
         else:
@@ -93,15 +94,23 @@ class VObj(object):
             except TypeError:
                 raise ValueError(f"bad vectorizer type for key: {key}")
 
-    def vectorize(self, data):
+    def vectorize(self, data) -> List[int]:
         answer = []
         for key, subv in self.sublist:
-            if data.__hasattr__(key):
-                attr = data.__getattr__(key)
+            if hasattr(data, key):
+                attr = getattr(data, key)
                 answer.extend(subv.vectorize(attr))
             else:
                 answer.extend([0] * len(subv))
         return answer
+
+    def debug_size(self, indent=0):
+        if indent == 0:
+            print(f"overall size: {len(self)}")
+        for key, subv in self.sublist:
+            print(" " * indent + f"{key}: {len(subv)}")
+            if hasattr(subv, "debug_size"):
+                subv.debug_size(indent=indent + 2)
 
     def __len__(self):
         return self.size

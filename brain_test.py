@@ -18,13 +18,15 @@ class TestBrain(unittest.TestCase):
 
     def test_vectorizing(self):
         size = len(Status.vectorizer)
-        print("vector size:", size)
+
+        Status.vectorizer.debug_size()
+
         for name in ["deadguy", "midcombat", "neow", "state"]:
             fname = f"test_{name}.json"
             with open(os.path.join(DIR, fname)) as f:
                 raw = f.read()
                 status = Status.parse(raw)
-                vector = Status.vectorizer(status)
+                vector = Status.vectorizer.vectorize(status)
                 self.assertEqual(len(vector), size, f"size check for {name}")
                 self.assertEqual(min(vector), 0, f"min check for {name}")
                 self.assertEqual(max(vector), 1, f"max check for {name}")

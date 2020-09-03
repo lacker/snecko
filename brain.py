@@ -10,7 +10,7 @@ from vectorize import *
 from xjson import *
 import logs
 
-MAX_CHOICES = 15
+MAX_CHOICES = 30
 LOG = open(os.path.expanduser("~/brain.log"), "a+")
 
 
@@ -49,11 +49,10 @@ Card.vectorizer = VObj(
         "cost": VInt(size=3),
         "exhausts": VBool,
         "has_target": VBool,
-        "id": VStr(),
         "is_playable": VBool,
-        "name": VStr(),
-        "rarity": VStr(),
-        "type": VStr(),
+        "name": VStr(size=3),
+        "rarity": VStr(size=1),
+        "type": VStr(size=1),
         "upgrades": VInt(size=5),
     },
 )
@@ -66,7 +65,7 @@ class Relic(object):
 
 Relic.parser = xobj(Relic, {"name": xstr, "id": xstr, "counter": xint})
 
-Relic.vectorizer = VObj({"counter": VInt(size=4), "id": VStr(), "name": VStr(),})
+Relic.vectorizer = VObj({"counter": VInt(size=4), "name": VStr(size=3),})
 
 
 class Potion(object):
@@ -150,15 +149,14 @@ Monster.vectorizer = VObj(
         "block": VInt(),
         "current_hp": VInt(),
         "half_dead": VBool,
-        "id": VStr(),
-        "intent": VStr(),
+        "intent": VStr(size=1),
         "is_gone": VBool,
         "max_hp": VInt(),
         "move_adjusted_damage": VInt(),
         "move_base_damage": VInt(),
         "move_hits": VInt(),
         "move_id": VInt(),
-        "name": VStr(),
+        "name": VStr(size=3),
     }
 )
 
@@ -255,7 +253,7 @@ GameState.parser = xobj(
         "floor": xint,
         "gold": xint,
         "is_screen_up": xbool,
-        "map": xany,
+        "map?": xany,
         "max_hp": xint,
         "potions": xlist(Potion.parser),
         "relics": xlist(Relic.parser),
@@ -274,7 +272,7 @@ GameState.vectorizer = VObj(
         "act": VInt(size=3),
         "action_phase": VStr(),
         "ascension_level": VInt(size=5),
-        "choice_list": VList(VStr(), size=MAX_CHOICES),
+        "choice_list": VList(VStr(size=3), size=MAX_CHOICES),
         "class": VStr(),
         "combat_state": CombatState.vectorizer,
         "current_hp": VInt(),
@@ -301,24 +299,11 @@ def play_command(card_index, target_index):
 
 
 class Status(object):
-    parser = None
-
     def __init__(self):
         pass
 
     @staticmethod
     def parse(string):
-        if not Status.parser:
-            Status.parser = xobj(
-                Status,
-                {
-                    "available_commands": xlist(xstr),
-                    "ready_for_command": xbool,
-                    "in_game": xbool,
-                    "game_state?": GameState.parser,
-                },
-            )
-
         data = json.loads(string)
         status = Status.parser(data)
         status.data = data
@@ -401,6 +386,26 @@ class Status(object):
 
     def dumps(self):
         return json.dumps(self.data, indent=2)
+
+
+Status.parser = xobj(
+    Status,
+    {
+        "available_commands": xlist(xstr),
+        "game_state?": GameState.parser,
+        "in_game": xbool,
+        "ready_for_command": xbool,
+    },
+)
+
+Status.vectorizer = VObj(
+    {
+        "game_state": GameState.vectorizer,
+        "in_game": VBool,
+        "ready_for_command": VBool,
+        "available_commands": VList(VStr()),
+    }
+)
 
 
 class Handler(BaseHTTPRequestHandler):

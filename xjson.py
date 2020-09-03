@@ -54,14 +54,14 @@ def xobj(cls, subparsers):
                 optional = True
             if key not in data:
                 if optional:
-                    answer.__setattr__(key, None)
+                    setattr(answer, key, None)
                     continue
                 raise ValueError(f"expected key {key} but data is {data}")
             value = subparser(data.get(key))
             # Hack for reserved words
             if key == "class":
                 key = "_class"
-            answer.__setattr__(key, value)
+            setattr(answer, key, value)
         return answer
 
     return find_answer
