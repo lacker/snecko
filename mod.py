@@ -9,6 +9,7 @@ import threading
 
 # For json-encoded lines of text sent to the mod
 QUEUE = queue.Queue()
+CACHE = {"line": "no game data yet"}
 
 
 def log(message):
@@ -21,7 +22,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Hello world! I should put some status information here.")
+
+        line = json.dumps(CACHE["line"], indent=2).encode()
+        self.wfile.write(line)
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
@@ -58,6 +61,7 @@ def game_communicator():
     print("ready", flush=True)
     for line in sys.stdin:
         QUEUE.put(line)
+        CACHE["line"] = line
 
 
 if __name__ == "__main__":
