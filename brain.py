@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
+
 import json
 import random
+import requests
 import os
 import sys
 
@@ -408,13 +409,10 @@ Status.vectorizer = VObj(
 )
 
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Hello world! I should put some status information here.")
+"""
+The old "POST" handling logic.
+TODO: map this to the script-driven paradigm
 
-    def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length).decode().strip()
         log(body)
@@ -443,10 +441,11 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         message = {"command": command}
         self.wfile.write(json.dumps(message).encode())
-
+"""
 
 if __name__ == "__main__":
-    port = 7777
-    httpd = HTTPServer(("", port), Handler)
-    print(f"running brain on port {port}....")
-    httpd.serve_forever()
+    print("type commands to issue them to the STS process.")
+    for line in sys.stdin:
+        r = requests.post("http://127.0.0.1:7777/", data=line)
+        response = json.loads(r.content.decode())
+        print json.dumps(response, indent=2)
