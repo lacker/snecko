@@ -20,11 +20,20 @@ def log(message):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+
+        line = CACHE["line"]
+        log("line: " + line)
+        try:
+            data = json.loads(line.strip())
+            output_line = json.dumps(data, indent=2)
+        except Exception as e:
+            output_line = f"error: {e}"
+
+        log("output line: " + output_line)
+
         self.send_response(200)
         self.end_headers()
-
-        line = json.dumps(CACHE["line"], indent=2).encode()
-        self.wfile.write(line)
+        self.wfile.write(output_line.encode())
 
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
