@@ -348,6 +348,11 @@ class Status(object):
             ]
         )
 
+    def potions_full(self):
+        return all(
+                [potion.can_discard for potion in self.game_state.potions]
+            )
+    
     def get_commands(self):
         """
         Returns a list of possible commands.
@@ -365,11 +370,8 @@ class Status(object):
             commands.append("END")
 
         if self.can_choose():
-            potions_full = all(
-                [potion.can_discard for potion in self.game_state.potions]
-            )
             for choice in self.game_state.choice_list:
-                if choice == "potion" and potions_full:
+                if choice == "potion" and self.potions_full():
                     pass
                 else:
                     commands.append(f"CHOOSE {choice}")
