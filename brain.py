@@ -188,6 +188,13 @@ class CombatState(object):
     def __init__(self):
         pass
 
+    def targets(self):
+        answer = []
+        for index, monster in enumerate(self.monsters):
+            if not monster.is_gone:
+                answer.append(index)
+        return answer
+
     def possible_plays(self):
         """
         Returns a list of (card index, target index) tuples.
