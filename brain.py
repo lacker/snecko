@@ -452,6 +452,10 @@ TODO: map this to the script-driven paradigm
 if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
     for line in sys.stdin:
-        r = requests.post("http://127.0.0.1:7777/", data=line)
+        try:
+            r = requests.post("http://127.0.0.1:7777/", data=line)
+        except requests.exceptions.ConnectionError:
+            print("could not connect to the mod. is it running?")
+            continue
         response = json.loads(r.content.decode())
         print(json.dumps(response, indent=2))
