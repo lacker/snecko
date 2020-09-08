@@ -305,6 +305,10 @@ def play_command(card_index, target_index):
     return f"PLAY {card_index} {target_index}"
 
 
+class BadCommandError(Exception):
+    pass
+
+
 class Status(object):
     def __init__(self):
         pass
@@ -312,6 +316,8 @@ class Status(object):
     @staticmethod
     def parse(string):
         data = json.loads(string)
+        if "error" in data:
+            raise BadCommandError(data["error"])
         status = Status.parser(data)
         status.data = data
         try:
@@ -415,6 +421,34 @@ Status.vectorizer = VObj(
 )
 
 
+class Connection(object):
+    def __init__(self):
+        self.status = None
+
+    def send(self, command):
+        try:
+            r = requests.post("http://127.0.0.1:7777/", data=line, timeout=2)
+        except requests.exceptions.ConnectionError:
+            print("could not connect to the mod. is it running?")
+            return False
+        except requests.exceptions.ReadTimeout:
+            print(
+                "request timed out. probably some sort of terrible parallelism bug is happening"
+            )
+            return False
+
+        try:
+            self.status = Status.parse(r.text)
+        except BadCommandError as e:
+            print(e)
+
+    def show(self):
+        if not self.status:
+            print("(no game data yet)")
+        else:
+            print(self.status.dumps())
+
+
 """
 The old "POST" handling logic.
 TODO: map this to the script-driven paradigm
@@ -451,20 +485,7 @@ TODO: map this to the script-driven paradigm
 
 if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
+    conn = Connection()
     for line in sys.stdin:
-        try:
-            r = requests.post("http://127.0.0.1:7777/", data=line, timeout=2)
-        except requests.exceptions.ConnectionError:
-            print("could not connect to the mod. is it running?")
-            continue
-        except requests.exceptions.ReadTimeout:
-            print("request timed out. probably some sort of parallel thing is broken")
-            continue
-
-        try:
-            response = json.loads(r.text)
-        except json.decoder.JSONDecodeError:
-            print("got bad json:", r.text)
-            continue
-
-        print(json.dumps(response, indent=2))
+        conn.send(line)
+        conn.show()
