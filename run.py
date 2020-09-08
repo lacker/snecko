@@ -4,7 +4,7 @@ import random
 import requests
 import sys
 
-from game import BadCommandError, Status, MAX_CHOICES, MAX_MONSTERS, NUM_ACTIONS
+from game import BadCommandError, Status
 
 
 class Connection(object):
