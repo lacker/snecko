@@ -432,6 +432,9 @@ class Connection(object):
         self.status = None
 
     def send(self, command):
+        """
+        Raises a BadCommandError if there is a bad command.
+        """
         try:
             r = requests.post("http://127.0.0.1:7777/", data=line, timeout=2)
         except requests.exceptions.ConnectionError:
@@ -443,10 +446,14 @@ class Connection(object):
             )
             return False
 
+        self.status = Status.parse(r.text)
+
+    def handle_command_line(self, command):
         try:
-            self.status = Status.parse(r.text)
+            self.send(command)
         except BadCommandError as e:
             print(e)
+        self.show()
 
     def show(self):
         if not self.status:
@@ -503,5 +510,4 @@ if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
     conn = Connection()
     for line in sys.stdin:
-        conn.send(line)
-        conn.show()
+        conn.handle_command_line(line)
