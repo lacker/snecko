@@ -6,8 +6,6 @@ import unittest
 
 from game import *
 
-DIR = os.path.dirname(__file__)
-
 
 class TestBrain(unittest.TestCase):
     def test_parsing(self):
