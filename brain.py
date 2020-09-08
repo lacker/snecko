@@ -550,40 +550,6 @@ class Connection(object):
             print("unrecognized game state")
 
 
-"""
-The old "POST" handling logic.
-TODO: map this to the script-driven paradigm
-
-        content_length = int(self.headers["Content-Length"])
-        body = self.rfile.read(content_length).decode().strip()
-        log(body)
-        status = Status.parse(body)
-        game = status.game_state
-        command = None
-
-        if game is None:
-            print("let's start a new run")
-            command = "START IRONCLAD"
-        elif game.screen_name == "SETTINGS":
-            print("in settings screen")
-
-        elif status.has_commands():
-            commands = status.get_commands()
-            print("possibilities:")
-            for c in commands:
-                print(c)
-            command = random.choice(commands)
-            print("command:", command)
-        else:
-            print(status.dumps())
-            print("don't know what to do")
-
-        self.send_response(200)
-        self.end_headers()
-        message = {"command": command}
-        self.wfile.write(json.dumps(message).encode())
-"""
-
 if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
     conn = Connection()
