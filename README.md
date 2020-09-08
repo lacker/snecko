@@ -10,12 +10,9 @@ conda create --name snecko
 conda activate snecko
 
 # Install dependencies
-conda install -c pytorch -c fastai fastai
 conda install -c conda-forge jupyterlab
 conda install -c conda-forge notebook
-
-# Run jupyter, then open scratch.ipynb
-jupyter notebook
+pip install stable-baselines3[extra]
 
 # In subsequent runs, instead of creating a new environment, reactivate your old one:
 conda activate snecko
@@ -28,6 +25,7 @@ In Steam, subscribe to these STS mods:
 * ModTheSpire
 * BaseMod
 * Communication Mod
+* SuperFastMode
 
 Run the game via the Steam UI and a menu will let you select "Play
 With Mods". Enable both BaseMod and Communication Mod in the mod
