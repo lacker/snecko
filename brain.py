@@ -207,9 +207,8 @@ class CombatState(object):
             if not card.is_playable:
                 continue
             if card.has_target:
-                for target_index, monster in enumerate(self.monsters):
-                    if not monster.is_gone:
-                        answer.append((card_index, target_index))
+                for target_index in self.targets():
+                    answer.append((card_index, target_index))
             else:
                 answer.append((card_index, None))
         return answer
