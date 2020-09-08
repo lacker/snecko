@@ -402,7 +402,10 @@ class Status(object):
         return self.game_state is not None
 
     def in_settings(self):
-        return self.game_state.screen_name == "SETTINGS"
+        return self.has_game() and self.game_state.screen_name == "SETTINGS"
+
+    def is_death(self):
+        return self.has_game() and self.game_state.screen_name == "DEATH"
 
     def dumps(self):
         return json.dumps(self.data, indent=2)
@@ -473,6 +476,13 @@ class Connection(object):
 
         if command == "show":
             self.show()
+            return
+
+        if command == "json":
+            if self.status:
+                print(self.status.dumps())
+            else:
+                print("null")
             return
 
         try:
