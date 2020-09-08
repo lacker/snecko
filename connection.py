@@ -3,6 +3,7 @@
 import random
 import requests
 import sys
+import time
 
 from game import BadCommandError, Status
 
@@ -14,7 +15,10 @@ class Connection(object):
     def send(self, command):
         """
         Raises a BadCommandError if there is a bad command.
+        self.status ends up set iff the send worked.
+        Returns whether the send worked.
         """
+        self.status = None
         try:
             r = requests.post("http://127.0.0.1:7777/", data=command, timeout=10)
         except requests.exceptions.ConnectionError:
@@ -25,6 +29,30 @@ class Connection(object):
             return False
 
         self.status = Status.parse(r.text)
+        return True
+
+    def issue_command(self, command):
+        """
+        Like send, but ensures that status is up-to-date afterwards.
+        """
+        success = self.send(command)
+        if not success:
+            self.get_status()
+        return self.status
+
+    def start_game(self):
+        self.issue_command("START IRONCLAD")
+
+    def get_status(self):
+        """
+        Retries as needed to figure out the game status.
+        """
+        while self.status is None:
+            self.send("STATE")
+            if not self.status:
+                print("state command failed. is the game running?")
+                time.sleep(2)
+        return self.status
 
     def make_random_move(self):
         """
@@ -39,10 +67,9 @@ class Connection(object):
         return True
 
     def random_playout(self):
-        if not self.status:
-            self.send("STATE")
+        self.get_status()
         if not self.status.has_game():
-            self.send("START IRONCLAD")
+            self.start_game()
         while self.status.has_commands():
             self.make_random_move()
 

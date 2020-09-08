@@ -375,6 +375,8 @@ class Status(object):
                 raise ValueError("invalid CHOOSE")
             return f"CHOOSE {choices[index1]}"
 
+        raise ValueError(f"bad action: {action}")
+
     def can_proceed(self):
         return "proceed" in self.available_commands
 
@@ -447,6 +449,12 @@ class Status(object):
 
     def has_game(self):
         return self.game_state is not None
+
+    def floor(self):
+        "Returns 0 if no game"
+        if not self.has_game():
+            return 0
+        return self.game_state.floor
 
     def in_settings(self):
         return self.has_game() and self.game_state.screen_name == "SETTINGS"

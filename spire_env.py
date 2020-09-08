@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import gym
+import numpy as np
+import random
 import spaces
 
 from connection import Connection
@@ -22,3 +24,50 @@ class SpireEnv(gym.Env):
         )
         self.observation_space = spaces.MultiBinary(STATUS_VECTOR_SIZE)
 
+    def observe(self):
+        status = self.conn.get_status()
+        vector = Status.vectorizer.vectorize(status)
+        return np.array(vector)
+
+    def reset(self):
+        """
+        This usually does not actually reset the game state.
+        If there is a game in progress, this lets the game stay as it is. 
+        If there is no game in progress, this does start a new one.
+        """
+        status = self.conn.get_status()
+        if not status.has_game():
+            self.conn.start_game()
+
+    def step(self, multi_action):
+        action, index1, index2 = multi_action
+        status = self.conn.get_status()
+        if not status.has_commands():
+            # The game is over.
+            return (self.observe(), 0, True, {})
+
+        try:
+            command = status.make_command(action, index1, index2)
+        except ValueError:
+            # This action is invalid. Move randomly
+            commands = status.get_commands()
+            command = random.choice(commands)
+
+        pre_floor = status.floor()
+        status = self.conn.issue_command(command)
+        post_floor = status.floor()
+        if post_floor > pre_floor:
+            reward = 1
+        else:
+            reward = 0
+        if status.has_game():
+            done = False
+        else:
+            done = True
+
+        return (self.observe(), reward, done, {})
+
+    def render(self, mode="human"):
+        if mode != "human":
+            raise NotImplementedError
+        self.conn.show()
