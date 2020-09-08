@@ -356,10 +356,8 @@ class Status(object):
         )
 
     def potions_full(self):
-        return all(
-                [potion.can_discard for potion in self.game_state.potions]
-            )
-    
+        return all([potion.can_discard for potion in self.game_state.potions])
+
     def get_commands(self):
         """
         Returns a list of possible commands.
@@ -457,4 +455,4 @@ if __name__ == "__main__":
     for line in sys.stdin:
         r = requests.post("http://127.0.0.1:7777/", data=line)
         response = json.loads(r.content.decode())
-        print json.dumps(response, indent=2)
+        print(json.dumps(response, indent=2))
