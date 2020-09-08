@@ -4,7 +4,7 @@
 import os
 import unittest
 
-from brain import *
+from game import *
 
 DIR = os.path.dirname(__file__)
 
@@ -19,7 +19,7 @@ class TestBrain(unittest.TestCase):
     def test_vectorizing(self):
         size = len(Status.vectorizer)
 
-        Status.vectorizer.debug_size()
+        # Status.vectorizer.debug_size()
 
         for name in ["deadguy", "midcombat", "neow", "state"]:
             fname = f"test_{name}.json"
