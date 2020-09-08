@@ -317,6 +317,7 @@ class Status(object):
     def parse(string):
         data = json.loads(string)
         if "error" in data:
+            print(json.dumps(data, indent=2))
             raise BadCommandError(data["error"])
         status = Status.parser(data)
         status.data = data
@@ -436,19 +437,44 @@ class Connection(object):
         Raises a BadCommandError if there is a bad command.
         """
         try:
-            r = requests.post("http://127.0.0.1:7777/", data=line, timeout=2)
+            r = requests.post("http://127.0.0.1:7777/", data=command, timeout=10)
         except requests.exceptions.ConnectionError:
             print("could not connect to the mod. is it running?")
             return False
         except requests.exceptions.ReadTimeout:
-            print(
-                "request timed out. probably some sort of terrible parallelism bug is happening"
-            )
+            print("request timed out.")
             return False
 
         self.status = Status.parse(r.text)
 
+    def make_random_move(self):
+        """
+        Returns whether we could make a random move.
+        """
+        if not self.status.has_commands():
+            return False
+        commands = self.status.get_commands()
+        command = random.choice(commands)
+        print("randomly choosing:", command)
+        self.send(command)
+
+    def random_playout(self):
+        if not self.status:
+            self.send("STATE")
+        if not self.status.has_game():
+            self.send("START IRONCLAD")
+        while self.status.has_commands():
+            self.make_random_move()
+
     def handle_command_line(self, command):
+        if command == "random":
+            self.random_playout()
+            return
+
+        if command == "show":
+            self.show()
+            return
+
         try:
             self.send(command)
         except BadCommandError as e:
@@ -510,4 +536,4 @@ if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
     conn = Connection()
     for line in sys.stdin:
-        conn.handle_command_line(line)
+        conn.handle_command_line(line.strip())

@@ -34,9 +34,9 @@ class Handler(BaseHTTPRequestHandler):
         print(command, flush=True)
 
         try:
-            line = QUEUE.get(block=True, timeout=3.0)
+            line = QUEUE.get(block=True, timeout=10.0)
         except:
-            line = json.dumps({"error": "no response"})
+            line = json.dumps({"error": "mod saw no response from game"})
 
         # log("responding with: " + line)
         self.send_response(200)
