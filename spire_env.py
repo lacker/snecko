@@ -4,6 +4,7 @@ import gym
 import numpy as np
 import random
 import spaces
+from stable_baselines3.common.env_checker import check_env
 
 from connection import Connection
 from game import Status, MAX_CHOICES, MAX_MONSTERS, NUM_ACTIONS
@@ -71,3 +72,9 @@ class SpireEnv(gym.Env):
         if mode != "human":
             raise NotImplementedError
         self.conn.show()
+
+
+if __name__ == "__main__":
+    conn = Connection()
+    env = SpireEnv(conn)
+    check_env(env)

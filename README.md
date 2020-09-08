@@ -10,8 +10,9 @@ conda create --name snecko
 conda activate snecko
 
 # Install dependencies
+conda install pip
 conda install -c conda-forge jupyterlab
-conda install -c conda-forge notebook
+conda install pytorch -c pytorch # maybe only needed on windows?
 pip install stable-baselines3[extra]
 
 # In subsequent runs, instead of creating a new environment, reactivate your old one:
