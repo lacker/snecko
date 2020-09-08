@@ -397,6 +397,12 @@ class Status(object):
 
         return commands
 
+    def has_game(self):
+        return self.game_state is not None
+
+    def in_settings(self):
+        return self.game_state.screen_name == "SETTINGS"
+
     def dumps(self):
         return json.dumps(self.data, indent=2)
 
@@ -445,8 +451,18 @@ class Connection(object):
     def show(self):
         if not self.status:
             print("(no game data yet)")
+        elif not self.status.has_game():
+            print("we are between games")
+        elif self.status.in_settings():
+            print("in the settings screen")
+        elif self.status.has_commands():
+            commands = self.status.get_commands()
+            print("possible commands:")
+            for c in commands:
+                print("  " + c)
         else:
-            print(self.status.dumps())
+            self.status.show()
+            print("unrecognized game state")
 
 
 """
