@@ -2,7 +2,6 @@
 
 
 import json
-import random
 import os
 
 from vectorize import *
@@ -11,12 +10,14 @@ import logs
 
 MAX_CHOICES = 30
 MAX_MONSTERS = 5
-LOG = open(os.path.expanduser("~/brain.log"), "a+")
+LOG = open(os.path.expanduser("~/game.log"), "a+")
 
 END = 0
 PLAY = 1
 CHOOSE = 2
 NUM_ACTIONS = 3
+
+DIR = os.path.dirname(__file__)
 
 
 def log(message):
@@ -331,6 +332,14 @@ class Status(object):
         except:
             pass
         return status
+
+    @staticmethod
+    def load_test_file(name):
+        fname = f"test_{name}.json"
+        with open(os.path.join(DIR, fname)) as f:
+            raw = f.read()
+            status = Status.parse(raw)
+            return status
 
     def make_command(action, index1, index2):
         """
