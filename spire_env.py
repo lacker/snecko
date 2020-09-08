@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 import gym
+from gym import spaces
 import numpy as np
 import random
-import spaces
 from stable_baselines3.common.env_checker import check_env
 
 from connection import Connection
 from game import Status, MAX_CHOICES, MAX_MONSTERS, NUM_ACTIONS
 
 test_status = Status.load_test_file("state")
-STATUS_VECTOR_SIZE = len(Status.vectorizer.vectorize(status))
+STATUS_VECTOR_SIZE = len(Status.vectorizer.vectorize(test_status))
 
 
 class SpireEnv(gym.Env):
