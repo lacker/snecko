@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+from enum import Enum
 import json
 import random
 import requests
@@ -12,7 +13,13 @@ from xjson import *
 import logs
 
 MAX_CHOICES = 30
+MAX_MONSTERS = 5
 LOG = open(os.path.expanduser("~/brain.log"), "a+")
+
+END = 0
+PLAY = 1
+CHOOSE = 2
+NUM_ACTIONS = 3
 
 
 def log(message):
@@ -328,6 +335,40 @@ class Status(object):
             pass
         return status
 
+    def make_command(action, index1, index2):
+        """
+        Raises a ValueError if this isn't a valid command for the game state.
+        """
+        if action == END:
+            # END is a catchall that includes every command that does nothing.
+            if self.can_end():
+                return "END"
+            if self.can_proceed():
+                return "PROCEED"
+            if self.can_confirm():
+                return "CONFIRM"
+            if self.can_leave():
+                return "LEAVE"
+            raise ValueError("cannot END")
+
+        if action == PLAY:
+            if not self.can_play():
+                raise ValueError("cannot PLAY")
+            # The first play index is 1-indexed
+            command = make_command(index1 + 1, index2)
+            if command not in self.game_state.combat_state.possible_plays():
+                raise ValueError("invalid PLAY")
+            return command
+
+        if action == CHOOSE:
+            # index2 is ignored
+            if not self.can_choose():
+                raise ValueError("cannot CHOOSE")
+            choices = self.game_state.choice_list
+            if index1 >= len(choices):
+                raise ValueError("invalid CHOOSE")
+            return f"CHOOSE {choices[index1]}"
+
     def can_proceed(self):
         return "proceed" in self.available_commands
 
@@ -460,6 +501,7 @@ class Connection(object):
         command = random.choice(commands)
         print("randomly choosing:", command)
         self.send(command)
+        return True
 
     def random_playout(self):
         if not self.status:
