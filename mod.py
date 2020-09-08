@@ -19,22 +19,6 @@ def log(message):
 
 
 class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-
-        line = CACHE["line"]
-        log("line: " + line)
-        try:
-            data = json.loads(line.strip())
-            output_line = json.dumps(data, indent=2)
-        except Exception as e:
-            output_line = f"error: {e}"
-
-        log("output line: " + output_line)
-
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(output_line.encode())
-
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         command = self.rfile.read(content_length).decode().strip()
@@ -46,17 +30,18 @@ class Handler(BaseHTTPRequestHandler):
             except:
                 pass
 
-        log("command: " + command)
+        # log("command: " + command)
         print(command, flush=True)
 
         try:
             line = QUEUE.get(block=True, timeout=3.0)
         except:
-            line = json.dumps({"error": "no response"}).encode()
+            line = json.dumps({"error": "no response"})
 
+        # log("responding with: " + line)
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(line)
+        self.wfile.write(line.encode())
 
 
 def server():

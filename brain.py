@@ -453,9 +453,18 @@ if __name__ == "__main__":
     print("type commands to issue them to the STS process.")
     for line in sys.stdin:
         try:
-            r = requests.post("http://127.0.0.1:7777/", data=line)
+            r = requests.post("http://127.0.0.1:7777/", data=line, timeout=2)
         except requests.exceptions.ConnectionError:
             print("could not connect to the mod. is it running?")
             continue
-        response = json.loads(r.content.decode())
+        except requests.exceptions.ReadTimeout:
+            print("request timed out. probably some sort of parallel thing is broken")
+            continue
+
+        try:
+            response = json.loads(r.text)
+        except json.decoder.JSONDecodeError:
+            print("got bad json:", r.text)
+            continue
+
         print(json.dumps(response, indent=2))
