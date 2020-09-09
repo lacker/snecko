@@ -21,7 +21,7 @@ conda activate snecko
 
 # Setting up the Slay The Spire mod
 
-In Steam, subscribe to these STS mods:
+In Steam, subscribe to these STS mods via the Steam Workshop website:
 
 * ModTheSpire
 * BaseMod
