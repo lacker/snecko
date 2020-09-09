@@ -100,9 +100,9 @@ def train():
     elapsed = time.time() - start
     print(f"{steps} steps processed")
     print(f"{timedelta(seconds=elapsed)} time elapsed")
-    print(f"{env.floors} floors climbed")
-    print(f"{env.games} games played")
-    print("{:.2f} floors per game".format(env.floors / env.games))
+    print(f"{env.total_floors} floors climbed")
+    print(f"{env.total_games} games played")
+    print("{:.2f} floors per game".format(env.total_floors / env.total_games))
     model.save("ppo_default")
 
 
