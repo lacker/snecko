@@ -89,13 +89,14 @@ def train():
     conn = Connection()
     env = Monitor(SpireEnv(conn), "./tmp/")
     model_name = "ppo_default"
+    logdir = "./tboard_log"
     try:
-        model = PPO.load(model_name)
+        model = PPO.load(model_name, env=env, tensorboard_log=logdir)
     except FileNotFoundError:
-        model = PPO(MlpPolicy, env, verbose=1, tensorboard_log="./tboard_log")
+        model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
     steps = 10000
-    model.learn(total_timesteps=steps)
+    model.learn(total_timesteps=steps, reset_num_timesteps=False)
     elapsed = time.time() - start
     print(f"{steps} steps processed")
     print(f"{timedelta(seconds=elapsed)} time elapsed")
