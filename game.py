@@ -447,6 +447,10 @@ class Status(object):
 
         return commands
 
+    def score(self):
+        "A heuristic score for the situation"
+        return 10 * self.floor() + self.hit_points()
+
     def has_game(self):
         return self.game_state is not None
 
@@ -455,6 +459,12 @@ class Status(object):
         if not self.has_game():
             return 0
         return self.game_state.floor
+
+    def hit_points(self):
+        "Returns 0 if no game"
+        if not self.has_game():
+            return 0
+        return self.game_state.current_hp
 
     def in_settings(self):
         return self.has_game() and self.game_state.screen_name == "SETTINGS"

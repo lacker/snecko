@@ -7,6 +7,7 @@ import numpy as np
 import random
 import time
 
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy
@@ -59,18 +60,24 @@ class SpireEnv(gym.Env):
         try:
             command = status.make_command(action, index1, index2)
         except ValueError:
-            # This action is invalid. Move randomly
-            commands = status.get_commands()
-            command = random.choice(commands)
+            # This action is invalid. Usually do nothing
+            if random.random() > 0.05:
+                command = None
+            else:
+                # But we don't want to get stuck so sometimes move randomly
+                commands = status.get_commands()
+                command = random.choice(commands)
 
+        pre_score = status.score()
         pre_floor = status.floor()
-        status = self.conn.issue_command(command)
+        if command:
+            status = self.conn.issue_command(command)
+        post_score = status.score()
         post_floor = status.floor()
+        reward = post_score - pre_score
+        
         if post_floor > pre_floor:
             self.total_floors += 1
-            reward = 1
-        else:
-            reward = 0
         if status.has_game():
             done = False
         else:
@@ -83,6 +90,19 @@ class SpireEnv(gym.Env):
         if mode != "human":
             raise NotImplementedError
         self.conn.show()
+
+
+class TensorboardCallback(BaseCallback):
+    def __init__(self, env):
+        verbose = 0
+        super(TensorboardCallback, self).__init__(verbose)
+        self.env = env
+
+    def _on_step(self):
+        status = self.env.conn.get_status()
+        if status.is_death():
+            self.logger.record("max_floor", status.floor())
+        return True
 
 
 def train():
