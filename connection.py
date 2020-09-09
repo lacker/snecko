@@ -111,9 +111,3 @@ class Connection(object):
             self.status.show()
             print("unrecognized game state")
 
-
-if __name__ == "__main__":
-    print("type commands to issue them to the STS process.")
-    conn = Connection()
-    for line in sys.stdin:
-        conn.handle_command_line(line.strip())
