@@ -361,7 +361,7 @@ class Status(object):
             if not self.can_play():
                 raise ValueError("cannot PLAY")
             # The first play index is 1-indexed
-            command = make_command(index1 + 1, index2)
+            command = play_command(index1 + 1, index2)
             if command not in self.game_state.combat_state.possible_plays():
                 raise ValueError("invalid PLAY")
             return command
