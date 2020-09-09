@@ -97,13 +97,14 @@ def train():
     start = time.time()
     steps = 10000
     model.learn(total_timesteps=steps, reset_num_timesteps=False)
+    model.save("ppo_default")
+
     elapsed = time.time() - start
     print(f"{steps} steps processed")
     print(f"{timedelta(seconds=elapsed)} time elapsed")
     print(f"{env.total_floors} floors climbed")
     print(f"{env.total_games} games played")
     print("{:.2f} floors per game".format(env.total_floors / env.total_games))
-    model.save("ppo_default")
 
 
 if __name__ == "__main__":
