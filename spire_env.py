@@ -39,6 +39,7 @@ class SpireEnv(gym.Env):
         status = self.conn.get_status()
         if not status.has_game():
             self.conn.start_game()
+        return self.observe()
 
     def step(self, multi_action):
         action, index1, index2 = multi_action
