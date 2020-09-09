@@ -341,7 +341,7 @@ class Status(object):
             status = Status.parse(raw)
             return status
 
-    def make_command(action, index1, index2):
+    def make_command(self, action, index1, index2):
         """
         Raises a ValueError if this isn't a valid command for the game state.
         """
