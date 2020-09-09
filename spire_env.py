@@ -31,6 +31,7 @@ class SpireEnv(gym.Env):
 
         self.total_games = 0
         self.total_floors = 0
+        self.max_floors = []
 
     def observe(self):
         status = self.conn.get_status()
@@ -81,6 +82,11 @@ class SpireEnv(gym.Env):
             self.total_games += 1
             done = True
 
+        if status.is_death():
+            self.max_floors.append(status.floor())
+            if len(self.max_floors) > 100:
+                self.max_floors.pop(0)
+
         return (self.observe(), reward, done, {})
 
     def render(self, mode="human"):
@@ -96,15 +102,17 @@ class TensorboardCallback(BaseCallback):
         self.env = env
 
     def _on_step(self):
-        status = self.env.conn.get_status()
-        if status.is_death():
-            self.logger.record("max_floor", status.floor())
+        fs = self.env.max_floors
+        if fs:
+            max_floor = sum(fs) / len(fs)
+            self.logger.record("max_floor", max_floor)
         return True
 
 
 def train():
     conn = Connection()
     env = Monitor(SpireEnv(conn), "./tmp/")
+    env.reset()
     model_name = "ppo_default"
     logdir = "./tboard_log"
     try:
@@ -112,7 +120,11 @@ def train():
     except FileNotFoundError:
         model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
-    steps = 10000
+
+    steps_per_hour = 50000
+    hours_to_train = 5
+    steps = steps_per_hour * hours_to_train
+
     callback = TensorboardCallback(env)
     model.learn(total_timesteps=steps, reset_num_timesteps=False, callback=callback)
     model.save("ppo_default")
