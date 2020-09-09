@@ -75,7 +75,7 @@ class SpireEnv(gym.Env):
         post_score = status.score()
         post_floor = status.floor()
         reward = post_score - pre_score
-        
+
         if post_floor > pre_floor:
             self.total_floors += 1
         if status.has_game():
@@ -116,7 +116,8 @@ def train():
         model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
     steps = 10000
-    model.learn(total_timesteps=steps, reset_num_timesteps=False)
+    callback = TensorboardCallback(env)
+    model.learn(total_timesteps=steps, reset_num_timesteps=False, callback=callback)
     model.save("ppo_default")
 
     elapsed = time.time() - start
