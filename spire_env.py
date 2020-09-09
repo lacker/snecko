@@ -66,16 +66,19 @@ class SpireEnv(gym.Env):
                 commands = status.get_commands()
                 command = random.choice(commands)
 
-        pre_score = status.score()
+        pre_hp = status.hit_points()
         pre_floor = status.floor()
         if command:
             status = self.conn.issue_command(command)
-        post_score = status.score()
+        post_hp = status.hit_points()
         post_floor = status.floor()
-        reward = post_score - pre_score
+
+        reward = post_hp - pre_hp
 
         if post_floor > pre_floor:
+            reward += 10 * (post_floor - pre_floor)
             self.total_floors += 1
+
         if status.has_game():
             done = False
         else:
@@ -122,7 +125,7 @@ def train():
     start = time.time()
 
     steps_per_hour = 50000
-    hours_to_train = 5
+    hours_to_train = 4
     steps = steps_per_hour * hours_to_train
 
     callback = TensorboardCallback(env)

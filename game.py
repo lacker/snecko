@@ -454,10 +454,6 @@ class Status(object):
 
         return commands
 
-    def score(self):
-        "A heuristic score for the situation"
-        return 10 * self.floor() + self.hit_points()
-
     def has_game(self):
         return self.game_state is not None
 
