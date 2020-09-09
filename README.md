@@ -36,3 +36,10 @@ This first run should actually create some config files. Edit the
 config file to make `command=` define the path to your `mod.py` entry
 point. Then rerun the game, again with mods enabled, and there should
 be a menu option to enable the Communication Mod to connect to the AI model.
+
+# Running stuff
+
+```
+python spire_env.py
+tensorboard --logdir ./tboard_log/
+```

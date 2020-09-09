@@ -2,4 +2,5 @@
 local/
 __pycache__/
 tmp/
+tboard_log/
 .ipynb_checkpoints/
