@@ -8,14 +8,9 @@ from vectorize import *
 from xjson import *
 import logs
 
-MAX_CHOICES = 30
-MAX_MONSTERS = 5
 LOG = open(os.path.expanduser("~/game.log"), "a+")
 
-END = 0
-PLAY = 1
-CHOOSE = 2
-NUM_ACTIONS = 3
+MAX_ACTIONS = 10
 
 DIR = os.path.dirname(__file__)
 
@@ -189,6 +184,12 @@ PlayerState.vectorizer = VObj(
 )
 
 
+def play_command(card_index, target_index):
+    if target_index is None:
+        return f"PLAY {card_index}"
+    return f"PLAY {card_index} {target_index}"
+
+
 class CombatState(object):
     def __init__(self):
         pass
@@ -199,6 +200,24 @@ class CombatState(object):
             if not monster.is_gone:
                 answer.append(index)
         return answer
+
+    def nth_play(self, n):
+        """
+        Returns a command string for playing the nth card.
+        Zero-indexed.
+        Raises a ValueError if this can't be done.
+        """
+        if len(self.hand) <= n:
+            raise ValueError("hand is too small")
+        card = self.hand[n]
+        if not card.is_playable:
+            raise ValueError("card is not playable")
+        if not card.has_target:
+            return play_command(n + 1, None)
+        ts = self.targets()
+        if not ts:
+            raise ValueError("no targets")
+        return play_command(n + 1, ts[0])
 
     def possible_plays(self):
         """
@@ -284,7 +303,7 @@ GameState.vectorizer = VObj(
         "act": VInt(size=3),
         "action_phase": VStr(),
         "ascension_level": VInt(size=5),
-        "choice_list": VList(VStr(size=3), size=MAX_CHOICES),
+        "choice_list": VList(VStr(size=3), size=(MAX_ACTIONS - 1)),
         "class": VStr(),
         "combat_state": CombatState.vectorizer,
         "current_hp": VInt(),
@@ -302,12 +321,6 @@ GameState.vectorizer = VObj(
         "screen_type": VStr(),
     }
 )
-
-
-def play_command(card_index, target_index):
-    if target_index is None:
-        return f"PLAY {card_index}"
-    return f"PLAY {card_index} {target_index}"
 
 
 class BadCommandError(Exception):
@@ -341,12 +354,17 @@ class Status(object):
             status = Status.parse(raw)
             return status
 
-    def make_command(self, action, index1, index2):
+    def make_command(self, action):
         """
+        Creates a command, with a bunch of heuristics to create a sane command.
         Raises a ValueError if this isn't a valid command for the game state.
         """
-        if action == END:
-            # END is a catchall that includes every command that does nothing.
+        if self.can_play():
+            # We always play a card if we can.
+            return self.game_state.combat_state.nth_play(action)
+
+        if action == 0:
+            # Zero means "do nothing"
             if self.can_end():
                 return "END"
             if self.can_proceed():
@@ -355,27 +373,16 @@ class Status(object):
                 return "CONFIRM"
             if self.can_leave():
                 return "LEAVE"
-            raise ValueError("cannot END")
+            raise ValueError("could not do nothing")
 
-        if action == PLAY:
-            if not self.can_play():
-                raise ValueError("cannot PLAY")
-            # The first play index is 1-indexed
-            command = play_command(index1 + 1, index2)
-            if command not in self.game_state.combat_state.possible_plays():
-                raise ValueError("invalid PLAY")
-            return command
+        if not self.can_choose():
+            raise ValueError("cannot choose")
 
-        if action == CHOOSE:
-            # index2 is ignored
-            if not self.can_choose():
-                raise ValueError("cannot CHOOSE")
-            choices = self.game_state.choice_list
-            if index1 >= len(choices):
-                raise ValueError("invalid CHOOSE")
-            return f"CHOOSE {choices[index1]}"
-
-        raise ValueError(f"bad action: {action}")
+        choices = self.game_state.choice_list
+        index = action - 1
+        if index >= len(choices):
+            raise ValueError("invalid choice")
+        return f"CHOOSE {choices[index]}"
 
     def can_proceed(self):
         return "proceed" in self.available_commands

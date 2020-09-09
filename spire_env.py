@@ -13,7 +13,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy
 
 from connection import Connection
-from game import Status, MAX_CHOICES, MAX_MONSTERS, NUM_ACTIONS
+from game import Status, MAX_ACTIONS
 
 test_status = Status.load_test_file("state")
 STATUS_VECTOR_SIZE = len(Status.vectorizer.vectorize(test_status))
@@ -26,9 +26,7 @@ class SpireEnv(gym.Env):
         super(SpireEnv, self).__init__()
         self.conn = conn
 
-        self.action_space = spaces.MultiDiscrete(
-            [NUM_ACTIONS, MAX_CHOICES, MAX_MONSTERS]
-        )
+        self.action_space = spaces.Discrete(MAX_ACTIONS)
         self.observation_space = spaces.MultiBinary(STATUS_VECTOR_SIZE)
 
         self.total_games = 0
@@ -50,15 +48,14 @@ class SpireEnv(gym.Env):
             self.conn.start_game()
         return self.observe()
 
-    def step(self, multi_action):
-        action, index1, index2 = multi_action
+    def step(self, action):
         status = self.conn.get_status()
         if not status.has_commands():
             # The game is over.
             return (self.observe(), 0, True, {})
 
         try:
-            command = status.make_command(action, index1, index2)
+            command = status.make_command(action)
         except ValueError:
             # This action is invalid. Usually do nothing
             if random.random() > 0.05:
