@@ -41,7 +41,7 @@ class Connection(object):
         return self.status
 
     def start_game(self, character="IRONCLAD", ascension=0, seed=None):
-        command = f{"START {character} {ascension}"}
+        command = f"START {character} {ascension}"
         if seed is not None:
             command += f" {seed}"
         self.issue_command(command)

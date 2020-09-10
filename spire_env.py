@@ -54,7 +54,7 @@ class SpireEnv(gym.Env):
         status = self.conn.get_status()
         if not status.has_game():
             self.conn.start_game(seed=seed)
-        if seed is not None:
+        elif seed is not None:
             raise ValueError("expected to start a new game")
         return self.observe()
 
@@ -123,7 +123,9 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("max_floor", max_floor)
         return True
 
+
 MODEL_NAME = "ppo_default"
+
 
 def train(hours):
     conn = Connection()
@@ -131,7 +133,7 @@ def train(hours):
     env.reset()
     logdir = "./tboard_log"
     try:
-        model = PPO.load(MODEL_NAME), env=env, tensorboard_log=logdir)
+        model = PPO.load(MODEL_NAME, env=env, tensorboard_log=logdir)
     except FileNotFoundError:
         model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
@@ -150,19 +152,23 @@ def train(hours):
     print(f"{env.total_games} games played")
     print("{:.2f} floors per game".format(env.total_floors / env.total_games))
 
+
 def evaluate(seed):
     conn = Connection()
     env = SpireEnv(conn)
     obs = env.reset(seed=seed)
     model = PPO.load(MODEL_NAME, env=env)
+    print(f"evaluating seed {seed}")
     while True:
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
-        if env.status.is_death():
-            print(f"on seed {seed} ({env.status.seed}) we got to floor {env.status.floor()}")
+        status = env.conn.get_status()
+        if status.is_death():
+            print(f"on seed {seed} ({status.seed}) we got to floor {status.floor()}")
         if done:
             break
 
+
 if __name__ == "__main__":
-    for _ in range(4):
-        train(1)
+    for seed in range(30):
+        evaluate(seed)
