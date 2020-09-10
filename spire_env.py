@@ -159,7 +159,7 @@ def evaluate(seed):
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action)
         if env.status.is_death():
-            print(f"on seed {seed} we got to floor {env.status.floor()}")
+            print(f"on seed {seed} ({env.status.seed}) we got to floor {env.status.floor()}")
         if done:
             break
 
