@@ -462,6 +462,17 @@ class Status(object):
             return 0
         return self.game_state.floor
 
+    def enemy(self):
+        "Returns a string name of the enemy, or 'none'."
+        if not self.has_game():
+            return "none"
+        if not self.game_state.combat_state:
+            return "none"
+        monsters = self.game_state.combat_state.monsters
+        if not monsters:
+            return "none"
+        return monsters[-1].name
+
     def seed(self):
         "Returns 0 if no game"
         if not self.has_game():
