@@ -136,7 +136,7 @@ Monster.parser = xobj(
         "intent": xstr,
         "is_gone": xbool,
         "max_hp": xint,
-        "move_adjusted_damage": xint,
+        "move_adjusted_damage?": xint,
         "move_base_damage": xint,
         "move_hits": xint,
         "move_id": xint,

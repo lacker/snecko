@@ -76,12 +76,14 @@ class SpireEnv(gym.Env):
         reward = post_hp - pre_hp
 
         if post_floor > pre_floor:
+            # print(f"from floor {pre_floor} -> {post_floor}")
             reward += 10 * (post_floor - pre_floor)
             self.total_floors += 1
 
         if status.has_game():
             done = False
         else:
+            # print("dead")
             self.total_games += 1
             done = True
 
