@@ -114,7 +114,7 @@ class TensorboardCallback(BaseCallback):
         return True
 
 
-def train():
+def train(hours):
     conn = Connection()
     env = Monitor(SpireEnv(conn), "./tmp/")
     env.reset()
@@ -127,8 +127,7 @@ def train():
     start = time.time()
 
     steps_per_hour = 50000
-    hours_to_train = 4
-    steps = steps_per_hour * hours_to_train
+    steps = steps_per_hour * hours
 
     callback = TensorboardCallback(env)
     model.learn(total_timesteps=steps, reset_num_timesteps=False, callback=callback)
@@ -143,4 +142,5 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    for _ in range(10):
+        train(1)
