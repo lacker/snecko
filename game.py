@@ -437,7 +437,8 @@ class Status(object):
 
         if self.can_choose():
             for choice in self.game_state.choice_list:
-                if choice == "potion" and self.potions_full():
+                # For now, never take potions, to avoid locking up.
+                if choice == "potion":
                     pass
                 else:
                     commands.append(f"CHOOSE {choice}")
