@@ -4,6 +4,7 @@ from datetime import timedelta
 import gym
 from gym import spaces
 import numpy as np
+import os
 import random
 import time
 
@@ -17,6 +18,12 @@ from game import Status, MAX_ACTIONS
 
 test_status = Status.load_test_file("state")
 STATUS_VECTOR_SIZE = len(Status.vectorizer.vectorize(test_status))
+
+LOG = open(os.path.expanduser("~/env.log"), "a+")
+
+
+def log(message):
+    LOG.write(message + "\n")
 
 
 class SpireEnv(gym.Env):
@@ -88,8 +95,9 @@ class SpireEnv(gym.Env):
             done = True
 
         if status.is_death():
+            log(f"seed {status.seed()} got to floor {status.floor()}")
             self.max_floors.append(status.floor())
-            if len(self.max_floors) > 100:
+            if len(self.max_floors) > 30:
                 self.max_floors.pop(0)
 
         return (self.observe(), reward, done, {})
@@ -142,5 +150,5 @@ def train(hours):
 
 
 if __name__ == "__main__":
-    for _ in range(10):
+    for _ in range(4):
         train(1)

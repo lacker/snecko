@@ -6,7 +6,6 @@ import os
 
 from vectorize import *
 from xjson import *
-import logs
 
 LOG = open(os.path.expanduser("~/game.log"), "a+")
 
@@ -462,6 +461,12 @@ class Status(object):
         if not self.has_game():
             return 0
         return self.game_state.floor
+
+    def seed(self):
+        "Returns 0 if no game"
+        if not self.has_game():
+            return 0
+        return self.game_state.seed
 
     def hit_points(self):
         "Returns 0 if no game"
