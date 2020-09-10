@@ -8,6 +8,8 @@ class VInt(object):
 
     def vectorize(self, data) -> List[int]:
         answer = []
+        if not data:
+            data = 0
         while len(answer) < self.size:
             answer.append(data % 2)
             data = data // 2
