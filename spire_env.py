@@ -125,7 +125,7 @@ class TensorboardCallback(BaseCallback):
 
 MODEL_NAME = "dqn_default"
 MODEL_CLASS = DQN
-KWARGS = {"verbose": 1, "buffer_size": 100000, "learning_starts": 5000}
+KWARGS = {"verbose": 1, "buffer_size": 100000, "learning_starts": 1000}
 
 
 def train(hours):
@@ -139,7 +139,7 @@ def train(hours):
         model = MODEL_CLASS(MlpPolicy, env, tensorboard_log=logdir, **KWARGS)
     start = time.time()
 
-    steps_per_hour = 50000
+    steps_per_hour = 7000
     steps = steps_per_hour * hours
 
     callback = TensorboardCallback(env)
@@ -173,5 +173,6 @@ def evaluate(seed):
 
 
 if __name__ == "__main__":
-    for _ in range(3):
+    for round in range(4):
+        print("round", round)
         train(1)
