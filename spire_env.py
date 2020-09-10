@@ -10,8 +10,8 @@ import time
 
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3 import PPO
-from stable_baselines3.ppo import MlpPolicy
+from stable_baselines3 import DQN
+from stable_baselines3.dqn import MlpPolicy
 
 from connection import Connection
 from game import Status, MAX_ACTIONS
@@ -123,7 +123,8 @@ class TensorboardCallback(BaseCallback):
         return True
 
 
-MODEL_NAME = "ppo_default"
+MODEL_NAME = "dqn_default"
+MODEL_CLASS = DQN
 
 
 def train(hours):
@@ -132,9 +133,9 @@ def train(hours):
     env.reset()
     logdir = "./tboard_log"
     try:
-        model = PPO.load(MODEL_NAME, env=env, tensorboard_log=logdir)
+        model = MODEL_CLASS.load(MODEL_NAME, env=env, tensorboard_log=logdir)
     except FileNotFoundError:
-        model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
+        model = MODEL_CLASS(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
 
     steps_per_hour = 50000
@@ -156,7 +157,7 @@ def evaluate(seed):
     conn = Connection()
     env = SpireEnv(conn)
     obs = env.reset(seed=seed)
-    model = PPO.load(MODEL_NAME, env=env)
+    model = MODEL_CLASS.load(MODEL_NAME, env=env)
     print(f"evaluating seed {seed}")
     while True:
         action, _states = model.predict(obs, deterministic=True)
