@@ -45,7 +45,7 @@ class SpireEnv(gym.Env):
         vector = Status.vectorizer.vectorize(status)
         return np.array(vector)
 
-    def reset(self):
+    def reset(self, seed=None):
         """
         This usually does not actually reset the game state.
         If there is a game in progress, this lets the game stay as it is. 
@@ -53,7 +53,9 @@ class SpireEnv(gym.Env):
         """
         status = self.conn.get_status()
         if not status.has_game():
-            self.conn.start_game()
+            self.conn.start_game(seed=seed)
+        if seed is not None:
+            raise ValueError("expected to start a new game")
         return self.observe()
 
     def step(self, action):
@@ -121,15 +123,15 @@ class TensorboardCallback(BaseCallback):
             self.logger.record("max_floor", max_floor)
         return True
 
+MODEL_NAME = "ppo_default"
 
 def train(hours):
     conn = Connection()
     env = Monitor(SpireEnv(conn), "./tmp/")
     env.reset()
-    model_name = "ppo_default"
     logdir = "./tboard_log"
     try:
-        model = PPO.load(model_name, env=env, tensorboard_log=logdir)
+        model = PPO.load(MODEL_NAME), env=env, tensorboard_log=logdir)
     except FileNotFoundError:
         model = PPO(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
     start = time.time()
@@ -139,7 +141,7 @@ def train(hours):
 
     callback = TensorboardCallback(env)
     model.learn(total_timesteps=steps, reset_num_timesteps=False, callback=callback)
-    model.save("ppo_default")
+    model.save(MODEL_NAME)
 
     elapsed = time.time() - start
     print(f"{steps} steps processed")
@@ -148,6 +150,18 @@ def train(hours):
     print(f"{env.total_games} games played")
     print("{:.2f} floors per game".format(env.total_floors / env.total_games))
 
+def evaluate(seed):
+    conn = Connection()
+    env = SpireEnv(conn)
+    obs = env.reset(seed=seed)
+    model = PPO.load(MODEL_NAME, env=env)
+    while True:
+        action, _states = model.predict(obs, deterministic=True)
+        obs, reward, done, info = env.step(action)
+        if env.status.is_death():
+            print(f"on seed {seed} we got to floor {env.status.floor()}")
+        if done:
+            break
 
 if __name__ == "__main__":
     for _ in range(4):

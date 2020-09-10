@@ -40,8 +40,11 @@ class Connection(object):
             self.get_status()
         return self.status
 
-    def start_game(self):
-        self.issue_command("START IRONCLAD")
+    def start_game(self, character="IRONCLAD", ascension=0, seed=None):
+        command = f{"START {character} {ascension}"}
+        if seed is not None:
+            command += f" {seed}"
+        self.issue_command(command)
 
     def get_status(self):
         """
