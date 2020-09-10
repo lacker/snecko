@@ -172,5 +172,5 @@ def evaluate(seed):
 
 
 if __name__ == "__main__":
-    for seed in range(14, 30):
-        evaluate(seed)
+    for _ in range(3):
+        train(1)
