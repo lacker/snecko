@@ -125,6 +125,7 @@ class TensorboardCallback(BaseCallback):
 
 MODEL_NAME = "dqn_default"
 MODEL_CLASS = DQN
+KWARGS = {"verbose": 1, "buffer_size": 100000, "learning_starts": 5000}
 
 
 def train(hours):
@@ -135,7 +136,7 @@ def train(hours):
     try:
         model = MODEL_CLASS.load(MODEL_NAME, env=env, tensorboard_log=logdir)
     except FileNotFoundError:
-        model = MODEL_CLASS(MlpPolicy, env, verbose=1, tensorboard_log=logdir)
+        model = MODEL_CLASS(MlpPolicy, env, tensorboard_log=logdir, **KWARGS)
     start = time.time()
 
     steps_per_hour = 50000
