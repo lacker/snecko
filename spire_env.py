@@ -174,5 +174,5 @@ def evaluate(seed):
 
 if __name__ == "__main__":
     for round in range(3):
-        print("round", round)
+        print(f"{time.ctime()} - round {round}")
         train(1)
