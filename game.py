@@ -419,6 +419,14 @@ class Status(object):
     def potions_full(self):
         return all([potion.can_discard for potion in self.game_state.potions])
 
+    def choices(self):
+        if not self.game_state:
+            return []
+        answer = self.game_state.choice_list
+        if self.potions_full():
+            answer = [c for c in answer if c != "potion"]
+        return answer
+
     def get_commands(self):
         """
         Returns a list of possible commands.
@@ -436,12 +444,8 @@ class Status(object):
             commands.append("END")
 
         if self.can_choose():
-            for choice in self.game_state.choice_list:
-                # For now, never take potions, to avoid locking up.
-                if choice == "potion":
-                    pass
-                else:
-                    commands.append(f"CHOOSE {choice}")
+            for choice in self.choices():
+                commands.append(f"CHOOSE {choice}")
 
         if self.can_proceed():
             commands.append("PROCEED")
