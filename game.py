@@ -381,6 +381,9 @@ class Status(object):
         index = action - 1
         if index >= len(choices):
             raise ValueError("invalid choice")
+        choice = choices[index]
+        if choice not in self.choices():
+            raise ValueError("disallowed choice")
         return f"CHOOSE {choices[index]}"
 
     def can_proceed(self):

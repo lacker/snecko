@@ -25,7 +25,7 @@ class Connection(object):
             print("could not connect to the mod. is it running?")
             return False
         except requests.exceptions.ReadTimeout:
-            print("request timed out.")
+            print(f"request timed out while sending '{command}'.")
             return False
 
         self.status = Status.parse(r.text)
@@ -88,6 +88,10 @@ class Connection(object):
 
         if command == "show":
             self.show()
+            return
+
+        if command == "pf":
+            print(self.status.potions_full())
             return
 
         if command == "json":
