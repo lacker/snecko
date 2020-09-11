@@ -427,7 +427,7 @@ class Status(object):
             return []
         answer = self.game_state.choice_list
         if self.potions_full():
-            answer = [c for c in answer if c != "potion"]
+            answer = [c for c in answer if "potion" not in c]
         return answer
 
     def get_commands(self):
