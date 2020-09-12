@@ -125,6 +125,13 @@ class Monster(object):
         pass
 
 
+def is_potion_name(name):
+    if "potion" in name:
+        return True
+    if name in ["distilled chaos"]:
+        return True
+
+
 Monster.parser = xobj(
     Monster,
     {
@@ -427,7 +434,7 @@ class Status(object):
             return []
         answer = self.game_state.choice_list
         if self.potions_full():
-            answer = [c for c in answer if "potion" not in c]
+            answer = [c for c in answer if not is_potion_name(c)]
         return answer
 
     def get_commands(self):
