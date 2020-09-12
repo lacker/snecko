@@ -151,7 +151,8 @@ def train(hours):
     print(f"{timedelta(seconds=elapsed)} time elapsed")
     print(f"{env.total_floors} floors climbed")
     print(f"{env.total_games} games played")
-    print("{:.2f} floors per game".format(env.total_floors / env.total_games))
+    if env.total_games > 0:
+        print("{:.2f} floors per game".format(env.total_floors / env.total_games))
 
 
 def evaluate(seed):
@@ -173,6 +174,6 @@ def evaluate(seed):
 
 
 if __name__ == "__main__":
-    for round in range(8):
+    for round in range(17):
         print(f"{time.ctime()} - round {round}")
         train(1)

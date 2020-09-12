@@ -132,6 +132,14 @@ def is_potion_name(name):
         return True
 
 
+def is_forbidden_choice(name):
+    if "random boss relic" in name:
+        return True
+    if "astrolabe" in name:
+        return True
+    return False
+
+
 Monster.parser = xobj(
     Monster,
     {
@@ -432,7 +440,7 @@ class Status(object):
     def choices(self):
         if not self.game_state:
             return []
-        answer = self.game_state.choice_list
+        answer = [c if not is_forbidden_choice(c) for c in self.game_state.choice_list]
         if self.potions_full():
             answer = [c for c in answer if not is_potion_name(c)]
         return answer
