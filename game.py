@@ -440,7 +440,7 @@ class Status(object):
     def choices(self):
         if not self.game_state:
             return []
-        answer = [c if not is_forbidden_choice(c) for c in self.game_state.choice_list]
+        answer = [c for c in self.game_state.choice_list if not is_forbidden_choice(c)]
         if self.potions_full():
             answer = [c for c in answer if not is_potion_name(c)]
         return answer
