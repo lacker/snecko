@@ -137,6 +137,8 @@ def is_forbidden_choice(name):
         return True
     if "astrolabe" in name:
         return True
+    if "calling bell" in name:
+        return True
     return False
 
 
