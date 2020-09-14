@@ -22,8 +22,10 @@ STATUS_VECTOR_SIZE = len(Status.vectorizer.vectorize(test_status))
 LOG = open(os.path.expanduser("~/env.log"), "a+")
 
 
-def log(message):
+def log(message, and_print=False):
     LOG.write(message + "\n")
+    if and_print:
+        print(message)
 
 
 class SpireEnv(gym.Env):
@@ -167,13 +169,16 @@ def evaluate(seed):
         status = env.conn.get_status()
 
         if status.is_death():
-            print(f"on seed {seed}|{status.seed()} we got to floor {status.floor()}")
+            log(
+                f"on seed {seed}|{status.seed()} we got to floor {status.floor()}",
+                and_print=True,
+            )
 
         if done:
             break
 
 
 if __name__ == "__main__":
-    for round in range(17):
-        print(f"{time.ctime()} - round {round}")
-        train(1)
+    for seed in range(100):
+        print(f"{time.ctime()} - evaluating seed {seed}")
+        evaluate(seed)

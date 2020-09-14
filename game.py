@@ -128,7 +128,7 @@ class Monster(object):
 def is_potion_name(name):
     if "potion" in name:
         return True
-    if name in ["distilled chaos", "liquid bronze"]:
+    if name in ["distilled chaos", "liquid bronze", "blessing of the forge"]:
         return True
 
 
