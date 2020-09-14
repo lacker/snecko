@@ -11,6 +11,11 @@ from game import BadCommandError, Status
 class Connection(object):
     def __init__(self):
         self.status = None
+        self.clear_log()
+
+    def clear_log(self):
+        self.log = []
+        self.dubious = False
 
     def send(self, command):
         """
@@ -49,6 +54,7 @@ class Connection(object):
         command = f"START {character} {ascension}"
         if seed is not None:
             command += f" {seed}"
+        self.clear_log()
         self.issue_command(command)
 
     def get_status(self):
