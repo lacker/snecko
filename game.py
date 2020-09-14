@@ -403,10 +403,20 @@ class Status(object):
             raise ValueError("disallowed choice")
         return f"CHOOSE {choices[index]}"
 
+    def in_combat_loop(self):
+        if not self.game_state:
+            return False
+        if not self.game_state.combat_state:
+            return False
+        return self.game_state.combat_state.turn > 200:
+
     def can_proceed(self):
         return "proceed" in self.available_commands
 
     def can_play(self):
+        if self.in_combat_loop():
+            # Don't let the player keep going forever
+            return False
         return "play" in self.available_commands
 
     def can_choose(self):
