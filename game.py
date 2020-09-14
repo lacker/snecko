@@ -408,7 +408,7 @@ class Status(object):
             return False
         if not self.game_state.combat_state:
             return False
-        return self.game_state.combat_state.turn > 200:
+        return self.game_state.combat_state.turn > 200
 
     def can_proceed(self):
         return "proceed" in self.available_commands
