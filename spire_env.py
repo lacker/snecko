@@ -179,6 +179,6 @@ def evaluate(seed):
 
 
 if __name__ == "__main__":
-    for seed in range(100):
-        print(f"{time.ctime()} - evaluating seed {seed}")
-        evaluate(seed)
+    for round in range(16):
+        print(f"{time.ctime()} - training round {round}")
+        train(1)
