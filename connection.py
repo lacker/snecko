@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import random
 import requests
 import sys
@@ -34,6 +35,8 @@ class Connection(object):
             return False
 
         self.status = Status.parse(r.text)
+        self.log.append(json.dumps({"command": command}))
+        self.log.append(r.text.strip())
         return True
 
     def issue_command(self, command):
