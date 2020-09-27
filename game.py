@@ -100,6 +100,8 @@ class ScreenState(object):
         pass
 
 
+# This should also have chest_open (bool) and chest_type (str)
+# but we missed it at the beginning of training.
 ScreenState.parser = xobj(
     ScreenState,
     {
