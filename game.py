@@ -476,8 +476,8 @@ class Status(object):
             commands.append("END")
 
         if self.can_choose():
-            for choice in self.choices():
-                commands.append(f"CHOOSE {choice}")
+            for i, choice in enumerate(self.choices()):
+                commands.append(f"CHOOSE {i}")
 
         if self.can_proceed():
             commands.append("PROCEED")

@@ -46,11 +46,6 @@ class Connection(object):
         success = self.send(command)
         if not success:
             self.get_status()
-        if command == "LEAVE":
-            next_possible = self.status.get_commands()
-            if "CHOOSE shop" in next_possible and "PROCEED" in next_possible:
-                # Break loops by refusing to re-enter shops
-                return self.issue_command("PROCEED")
         return self.status
 
     def start_game(self, character="IRONCLAD", ascension=0, seed=None):
