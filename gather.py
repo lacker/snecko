@@ -6,7 +6,10 @@ import random
 
 from connection import Connection
 
-RUNLOGDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "runlogs")
+if os.name == "nt":
+    RUNLOGDIR = "d:/runlogs"
+else:
+    raise ValueError("please implement RUNLOGDIR for this OS")
 
 
 def logname(run_id, seed):
