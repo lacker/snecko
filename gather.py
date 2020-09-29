@@ -14,6 +14,10 @@ def logname(run_id, seed):
 
 
 def gather(conn, run_id, seed):
+    fname = logname(run_id, seed)
+    if os.path.exists(fname):
+        print(f"skipping {fname}")
+        return
     random.seed(seed)
     status = conn.get_status()
     if status.has_game():
@@ -21,7 +25,7 @@ def gather(conn, run_id, seed):
     conn.start_game(seed=seed)
     while conn.get_status().has_game():
         conn.make_random_move()
-    f = open(logname(run_id, seed), "w")
+    f = open(fname, "w")
     for line in conn.log:
         f.write(line + "\n")
     f.close()
