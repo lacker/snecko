@@ -8,6 +8,8 @@ from connection import Connection
 
 if os.name == "nt":
     RUNLOGDIR = "d:/runlogs"
+elif os.name == "posix":
+    raise ValueError("mount the runlogs somewhere")
 else:
     raise ValueError("please implement RUNLOGDIR for this OS")
 
